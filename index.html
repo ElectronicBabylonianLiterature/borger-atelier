@@ -1,0 +1,1380 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Borger Wedge Atelier</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: a drafting table. Sign list on the left, the drawing board in the middle, the selected sign's facts on the right. */
+:root {
+  --bg: #e9ecee;          /* drafting film */
+  --panel: #f7f8f9;
+  --board: #ffffff;
+  --ink: #16191c;
+  --muted: #5d666e;
+  --line: #d3d8dc;
+  --accent: #1f5fd1;      /* contour and nodes */
+  --accent-soft: #dfe8fa;
+  --fill: #16191c;
+  --fill-op: 0.13;
+  --grid: #eef1f4;
+  --ref: #ef8fbf;         /* Borger's squares */
+  --base: #d4147f; --cap: #2b5b8c; --adv: #2b8657;
+  --warn: #a8541a;
+  --guide: #0b8f9c;       /* guide lines and angles */
+  --font-ui: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121518; --panel: #181c20; --board: #1d2125; --ink: #e8ebee; --muted: #98a2ab; --line: #2c3238;
+  --accent: #6f9dff; --accent-soft: #23314d; --fill: #e8ebee; --fill-op: 0.16; --grid: #23282d; --ref: #b85a8b;
+  --base: #f05aa8; --cap: #79a7d6; --adv: #5cc28c; --warn: #e39a5c; --guide: #45c9d4; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121518; --panel: #181c20; --board: #1d2125; --ink: #e8ebee; --muted: #98a2ab; --line: #2c3238;
+  --accent: #6f9dff; --accent-soft: #23314d; --fill: #e8ebee; --fill-op: 0.16; --grid: #23282d; --ref: #b85a8b;
+  --base: #f05aa8; --cap: #79a7d6; --adv: #5cc28c; --warn: #e39a5c; --guide: #45c9d4; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 14px; }
+.app { height: 100%; display: grid; grid-template-columns: 260px minmax(0, 1fr) 240px; grid-template-rows: auto minmax(0, 1fr); gap: 10px;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: 0.01em; text-wrap: balance; }
+h1 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; border-radius: 0; background: transparent; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+button, select, input { font: inherit; color: var(--ink); }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:disabled { opacity: 0.45; cursor: default; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+select, input[type="text"], input[type="number"] { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+label.chk { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); cursor: pointer; }
+#status { font-family: var(--font-data); font-size: 12px; color: var(--muted); min-width: 9ch; }
+#status.warn { color: var(--warn); }
+
+aside, .info { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 0; display: flex; flex-direction: column; }
+aside .head { padding: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+#q { width: 100%; box-sizing: border-box; }
+.counts { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+#list { overflow-y: auto; min-height: 0; flex: 1; }
+.item { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 10px; cursor: pointer; border-bottom: 1px solid var(--line);
+  content-visibility: auto; contain-intrinsic-size: auto 52px; }
+.item:hover { background: var(--bg); }
+.item[aria-selected="true"] { background: var(--accent-soft); }
+.item svg { width: 64px; height: 40px; display: block; }
+.item svg path { fill: var(--ink); }
+.item .cp { font-family: var(--font-data); font-size: 12px; }
+.item .go { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+.item .mz { font-family: var(--font-data); font-size: 11px; color: var(--muted); margin-left: 8px; }
+.order { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.order button { font-size: 12px; padding: 2px 8px; }
+.order button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.item.var { padding-left: 34px; grid-template-columns: 40px minmax(0, 1fr); }
+.item.var svg { width: 40px; height: 28px; }
+.mzh { font-family: var(--font-data); font-size: 11px; color: var(--muted); padding: 6px 10px 2px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.item .nm { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag { display: inline-block; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
+#el-types button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.tag.ed { background: var(--accent-soft); color: var(--accent); }
+.tag.seq { border: 1px solid var(--line); color: var(--muted); }
+.tag.new { background: var(--warn); color: var(--board); }
+.tag.nf { border: 1px dashed var(--muted); color: var(--muted); }
+.counts { flex-wrap: wrap; }
+
+.mid { min-height: 0; min-width: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
+.proofline { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+.pl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+#proof-signs { flex: 1; min-width: 12ch; font-family: var(--font-data); font-size: 12px; }
+.pl-line { overflow-x: auto; background: var(--board); border-radius: 6px; padding: 8px 10px; line-height: 0; display: flex; flex-wrap: nowrap; align-items: flex-end; }
+.pl-line svg { display: block; flex: none; cursor: pointer; }
+.pl-line svg path { fill: var(--ink); }
+.pl-line svg.cur path { fill: var(--accent); }
+.pl-line .pl-cur { position: relative; flex: none; display: block; }
+.pl-line .pl-cp { cursor: copy; user-select: all; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; font: 11px/1.2 var(--font-data); color: var(--accent); white-space: nowrap; }
+#proof-line { padding-bottom: 22px; }   /* room for the edited sign's code point, so the signs stay on one baseline */
+.pl-line .gap { display: inline-block; width: 0.6em; }
+.pl-line .miss { display: inline-block; vertical-align: bottom; font: 11px var(--font-data); color: var(--warn); line-height: 1.2; padding: 0 4px; }
+.boardwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--board); overflow: hidden; }
+#board { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; cursor: default; }
+#board.pan { cursor: grab; }
+#board .grid { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+#board .ref { fill: none; stroke: var(--ref); stroke-width: 1; vector-effect: non-scaling-stroke; }
+#board .ink { fill: var(--fill); fill-opacity: var(--fill-op); }
+#board.solid .ink { fill-opacity: 1; }
+#board .outline { fill: none; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+#board.solid .outline { stroke-opacity: 0.0; }
+#board .g-base { stroke: var(--base); } #board .g-cap { stroke: var(--cap); } #board .g-adv { stroke: var(--adv); }
+#board .guide { stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+#board .smart { stroke: var(--base); stroke-width: 1; stroke-dasharray: 4 3; }
+#board .node { fill: var(--board); stroke: var(--accent); stroke-width: 1; }
+#board .node.sel { fill: var(--accent); }
+#board .node.hot { stroke-width: 2; }
+#board .node.ghost { fill: var(--accent-soft); stroke-dasharray: 2 1.5; }
+#board.adding { cursor: crosshair; }
+#board .cutline { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 6 4; }
+#board .holedraft { fill: var(--board); fill-opacity: 0.7; stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 5 3; }
+#board .holenode { fill: var(--board); stroke: var(--warn); stroke-width: 1.5; }
+#board .holenode.first { stroke-width: 2.5; }
+.tools { position: absolute; top: 8px; left: calc(8px + env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; gap: 4px; }
+.tools button { font-size: 13px; padding: 4px 9px; }
+.touchonly { display: none; }
+@media (pointer: coarse) { .touchonly { display: contents; } .tools button { font-size: 15px; padding: 8px 12px; } }
+.tools button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+#board .marquee { fill: var(--accent-soft); fill-opacity: 0.5; stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 2; }
+#board .uguide { stroke: var(--guide); stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+#board .uguide.sel { stroke-width: 2; }
+#board .ray { stroke: var(--guide); stroke-width: 1.2; stroke-dasharray: 6 3; }
+#board .ghandle { fill: var(--board); stroke: var(--guide); stroke-width: 1.5; cursor: grab; }
+#board .ghandle.rot { fill: var(--guide); }
+#board .angle { font: 500 11px var(--font-data); fill: var(--guide); paint-order: stroke; stroke: var(--board); stroke-width: 3px; }
+.grow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.grow input { width: 7ch; font-family: var(--font-data); }
+.grow button { padding: 4px 8px; font-family: var(--font-data); font-size: 12px; }
+.zoom { position: absolute; right: calc(8px + env(safe-area-inset-right, 0px)); bottom: 8px; display: flex; gap: 4px; align-items: center; }
+.zoom span { font-family: var(--font-data); font-size: 12px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; min-width: 5ch; text-align: center; }
+.hint { position: absolute; left: 10px; bottom: 8px; right: 210px; font-size: 12px; color: var(--muted); line-height: 1.4; pointer-events: none; }
+.hint kbd { font-family: var(--font-data); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); }
+
+.info { padding: 12px; gap: 14px; overflow-y: auto; }
+.info h2 { font-size: 22px; font-family: var(--font-data); font-weight: 500; margin: 0; }
+.info .name { color: var(--muted); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; margin: 0; }
+.facts dt { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; padding-top: 2px; }
+.facts dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.xy { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px; align-items: center; }
+.xy input { width: 100%; box-sizing: border-box; font-family: var(--font-data); }
+.orig { margin: 0; display: grid; gap: 6px; }
+#orig-img { background: var(--board); border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: flex; justify-content: center; }
+#orig-img svg { max-width: 100%; height: auto; max-height: 220px; display: block; }
+#orig-img .sq { fill: var(--ink); }
+#orig-img .gl { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.orig figcaption { font-size: 12px; color: var(--muted); }
+
+.corr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.corr figure { margin: 0; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.corr figcaption { font-size: 12px; color: var(--muted); }
+.cbox { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 6px; min-height: 84px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; color: #000; overflow: hidden; }
+#asb .g { font-family: 'Assurbanipal', serif; font-size: 56px; line-height: 1.2; white-space: nowrap; }
+#ell img { height: 54px; max-width: 100%; display: block; }
+#ell .e { display: grid; justify-items: center; font-size: 10px; color: #555; }
+.cbox .none { font-size: 12px; color: #777; text-align: center; }
+.proof { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding: 8px 0 2px; border-top: 1px solid var(--line); }
+.proof svg path { fill: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#reset.confirm { border-color: var(--warn); color: var(--warn); }
+.note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 190px auto auto; height: auto; min-height: 100%; }
+  .mid { grid-template-rows: 420px auto; }
+  .info { overflow: visible; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Borger Wedge Atelier <small>edits are saved to GitHub (branch atelier)</small></h1>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Family">
+        <button id="fam-w" aria-pressed="true">White heads</button><button id="fam-b" aria-pressed="false">Black heads</button>
+      </div>
+      <div class="seg" role="group" aria-label="View">
+        <button id="v-out" aria-pressed="true">Outline</button><button id="v-solid" aria-pressed="false">Preview</button>
+      </div>
+      <label class="chk" title="Borger's squares; where you redrew a sign, squares that follow your edit (his own drawing stays in the panel on the right)"><input type="checkbox" id="show-ref" checked> Squares</label>
+      <label class="chk" title="Snap moved nodes to the grid">Snap
+        <select id="snap"><option value="1">1 unit</option><option value="6">¼ square</option><option value="12">½ square</option><option value="24">1 square</option><option value="0">off</option></select></label>
+      <label class="chk"><input type="checkbox" id="smart" checked> Smart guides</label>
+      <label class="chk" title="Angle guides from the neighbouring nodes while you drag">Angles
+        <select id="angstep"><option value="45">45° · 90°</option><option value="15">every 15°</option><option value="0">off</option></select></label>
+      <button id="add-guide" title="Add a guide line through the selected node (G)">+ Guide line</button>
+      <button id="clear-guides" title="Delete all guide lines of this sign">Clear guides</button>
+      <button id="undo" title="Undo (Ctrl+Z)">Undo</button><button id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+      <span id="status" role="status">Loading…</span>
+    </div>
+  </header>
+
+  <aside aria-label="Signs">
+    <div class="head">
+      <input id="q" type="text" placeholder="Search: 12006, HI, KA TIMES, a2b5, MZL 662…" autocomplete="off">
+      <div class="counts"><label class="chk"><input type="checkbox" id="only-ed"> Edited only</label><span id="count"></span></div>
+      <div class="order" role="group" aria-label="Order of the list">Order <button id="ord-u" aria-pressed="true" title="Code point order">Unicode</button><button id="ord-m" aria-pressed="false" title="MesZL order, variants indented under their number; a bare number searches MesZL">MZL</button></div>
+    </div>
+    <div id="list" role="listbox" aria-label="Signs"></div>
+  </aside>
+
+  <div class="mid">
+  <div class="boardwrap">
+    <svg id="board" aria-label="Contour editor"></svg>
+    <div class="tools" role="toolbar" aria-label="Tools">
+      <button id="t-sel" aria-pressed="true" title="Select and move nodes (V)">Select</button>
+      <button id="t-add" aria-pressed="false" title="Add nodes: click on a line (+)">+ Add node</button>
+      <button id="t-del" title="Delete the selected nodes (Del)">− Delete node</button>
+      <button id="t-hole" aria-pressed="false" title="Cut a hole: drag a rectangle, or click the corners of a shape and click the first corner again (H)">▢ Cut hole</button>
+      <button id="t-lift" aria-pressed="false" title="Cut a part out of the outline so it can be moved: drag a box over it (L)">⬚ Lift part</button>
+      <button id="t-scis" aria-pressed="false" title="Scissors: drag a line across the ink to cut it into separate pieces, which can then be moved (K)">✂ Scissors</button>
+      <button id="t-merge" title="Merge: join all pieces that touch or overlap into one outline (M)">⧉ Merge</button>
+      <button id="t-els" title="Elements: replace the sign by Borger’s elements, every wedge its own piece, made from his squares as the font build makes them (your edits of this sign are replaced; Undo brings them back)">⊞ Elements</button>
+      <button id="t-cutels" title="Cut into elements: cut the present outline along Borger’s elements, so every wedge becomes its own piece and your edits stay; ink outside every element stays as one more piece">⊟ Cut into elements</button>
+      <span class="touchonly">
+        <button id="t-lock" aria-pressed="false" title="Keep moves and drawn lines at 0° / 45° / 90° (as holding Shift)">45° lock</button>
+        <button id="t-addsel" aria-pressed="false" title="Taps add to the selection (as Shift+click)">+ Select</button>
+        <button id="t-whole" aria-pressed="false" title="A tap on a node selects its whole contour (as Ctrl+click)">Whole contour</button>
+        <button id="t-desel" title="Deselect, back to Select (Esc)">Deselect</button>
+        <button id="t-turn" title="Turn the selected guide line 45° (R)">Turn guide</button>
+      </span>
+      <button id="t-copy" title="Copy the contours of the selected nodes (Ctrl+C). Ctrl+click a node selects its whole contour.">Copy</button>
+      <button id="t-paste" title="Paste the copied contours, also into another sign (Ctrl+V)" disabled>Paste</button>
+    </div>
+    <div class="hint">Drag nodes · drag on empty space to select several · <kbd>Shift</kbd> 45°/90° · add nodes with <kbd>+</kbd> Add node, <kbd>Alt</kbd>+click or double-click on a line · <kbd>Del</kbd> removes · <kbd>H</kbd> cut a hole (drag a box, or click corners) · press inside a hollow or a separate piece and drag to move it · <kbd>L</kbd> lift a part out to move it · <kbd>K</kbd> scissors: drag a line across the ink to cut it apart · <kbd>M</kbd> merge the pieces again · <kbd>G</kbd> guide line, <kbd>R</kbd> turns it 45° (<kbd>Shift</kbd>+<kbd>R</kbd> back) · arrows nudge (<kbd>Shift</kbd> ½ square) · <kbd>Space</kbd>+drag or scroll pans (<kbd>Shift</kbd>+scroll: sideways) · <kbd>Ctrl</kbd>+scroll zooms</div>
+    <div class="zoom"><button id="z-out" aria-label="Zoom out">−</button><span id="z-lvl">100%</span><button id="z-in" aria-label="Zoom in">+</button><button id="z-fit">Fit</button></div>
+  </div>
+  <section class="proofline" aria-label="Proof line">
+    <div class="pl-head">
+      <label for="proof-signs" class="lbl" style="margin:0">Proof line</label>
+      <input id="proof-signs" type="text" autocomplete="off" spellcheck="false" placeholder="Code points (12079 1202D), sequences (122D9-1202D) or cuneiform text">
+      <label class="chk">Size <select id="proof-size"><option value="40">40</option><option value="64" selected>64</option><option value="96">96</option></select></label>
+    </div>
+    <div id="proof-line" class="pl-line"></div>
+  </section>
+  </div>
+
+  <section class="info" aria-label="Sign">
+    <div><h2 id="i-cp">—</h2><div class="name" id="i-name"></div></div>
+    <figure class="orig">
+      <div id="orig-img"></div>
+      <figcaption id="orig-cap">Borger's original</figcaption>
+    </figure>
+    <div class="corr" aria-label="Correspondents">
+      <figure><div id="asb" class="cbox"></div><figcaption>Assurbanipal</figcaption></figure>
+      <figure><div id="ell" class="cbox"></div><figcaption id="ell-cap">Ellermeier, Handbuch Assur</figcaption></figure>
+    </div>
+    <dl class="facts">
+      <dt>Contours</dt><dd id="i-cont">—</dd>
+      <dt>Nodes</dt><dd id="i-nodes">—</dd>
+      <dt>Width</dt><dd id="i-adv">—</dd>
+      <dt>MesZL</dt><dd id="i-mz">—</dd>
+      <dt>Gottstein</dt><dd id="i-go">—</dd>
+      <dt>State</dt><dd id="i-state">—</dd>
+    </dl>
+    <div>
+      <div class="lbl" id="sel-lbl">Selected node</div>
+      <div class="xy"><label for="nx">X</label><input id="nx" type="number" step="1" disabled><label for="ny">Y</label><input id="ny" type="number" step="1" disabled></div>
+      <p class="note" id="seg-ang" style="margin-top:6px"></p>
+      <div id="multi-panel" class="grow" style="margin-top:6px" hidden>
+        <label for="scale-pct">Scale</label><input id="scale-pct" type="number" value="75" min="5" max="400" step="1"><span>%</span>
+        <button id="scale-go" title="Uniform scaling: everything shrinks, the strokes too">Scale selection</button>
+        <button id="scale-comp" title="Compensated scaling: the selection shrinks, its strokes stay 48 units (2 squares) thick, as Borger draws smaller signs">Compensated</button>
+        <button class="scale-pre" data-p="75" title="Scale the selection to 75 % (the SAG rule)">75 %</button><button class="scale-pre" data-p="62" title="Scale the selection to 62 % (as LÚ× and the KASKAL / LAGAB×U stacks)">62 %</button>
+      </div>
+      <div id="rot-panel" class="grow" style="margin-top:6px" hidden>
+        <label for="rot-deg">Rotate</label><input id="rot-deg" type="number" value="90" step="15"><span>°</span>
+        <button id="rot-go" title="Rotate the selection round its middle, anticlockwise (negative: clockwise)">Rotate</button>
+        <button id="rot-l" title="Rotate 90° anticlockwise">↺ 90°</button><button id="rot-r" title="Rotate 90° clockwise">↻ 90°</button><button id="rot-180">180°</button>
+        <button id="flip-h" title="Mirror left–right">⇋ Mirror</button><button id="flip-v" title="Mirror up–down">⇵ Mirror</button>
+      </div>
+      <div id="move-panel" class="grow" style="margin-top:6px" hidden>
+        <label for="move-x">Move by X</label><input id="move-x" type="number" value="0" step="1">
+        <label for="move-y">Y</label><input id="move-y" type="number" value="0" step="1">
+        <button id="move-go">Move selection</button>
+      </div>
+      <div style="margin-top:10px">
+        <div class="lbl">Elements: Borger's wedges</div>
+        <div class="grow" id="el-types">
+          <button data-el="v" aria-pressed="true" title="Vertical wedge (head on top)">Vertical</button><button data-el="h" aria-pressed="false" title="Horizontal wedge (head on the left)">Horizontal</button><button data-el="dr" aria-pressed="false" title="Diagonal ↘ (head upper left)">Diagonal ↘</button><button data-el="ur" aria-pressed="false" title="Diagonal ↗ (head lower left)">Diagonal ↗</button><button data-el="wk" aria-pressed="false" title="Winkelhaken">Winkelhaken</button>
+        </div>
+        <div class="grow" style="margin-top:6px"><label for="el-len" id="el-len-lbl">Tail</label><input id="el-len" type="number" value="21" min="0" max="30" step="1"><span>squares</span><button id="el-go" title="Insert the element in the middle of the view">Insert</button></div>
+        <p class="note">Made exactly as the font build makes Borger's elements (White or Black, the family you are editing). Inserted in the middle of the view as its own contours, selected: drag it into place, then Merge.</p>
+      </div>
+      <p class="note" style="margin-top:6px">Font units: 24 = one of Borger's squares, baseline at Y 0, cap line at 624. Angles count from the horizontal, anticlockwise: ↗ is 45°, ↘ is 135°.</p>
+    </div>
+    <div id="guide-panel" hidden>
+      <div class="lbl">Guide line</div>
+      <div class="grow">
+        <label for="ga">Angle</label><input id="ga" type="number" step="0.5">
+        <button data-a="0">0°</button><button data-a="45">45° ↗</button><button data-a="90">90°</button><button data-a="135">−45° ↘</button>
+      </div>
+      <div class="grow" style="margin-top:6px"><button id="del-guide">Delete guide line</button></div>
+      <p class="note" style="margin-top:6px">Drag the line or its round handle to move it; it clicks onto nodes. Drag the filled handle to rotate: it clicks into every 15°, <kbd>Shift</kbd> keeps it to 45° steps.</p>
+    </div>
+    <div>
+      <div class="lbl">At reading size</div>
+      <div class="proof" id="proof"></div>
+    </div>
+    <div class="actions">
+      <button id="export">Export SVG</button>
+      <button id="reset">Reset to the built sign</button>
+    </div>
+    <p class="note">Edits are saved automatically as commits on the branch atelier (White and Black separately); every push builds the fonts (GitHub Actions). Export downloads an SVG.</p>
+  </section>
+</div>
+
+<script src="vendor/polygon-clipping.umd.min.js"></script>
+<script src="vendor/clipper.js"></script>
+<script src="squares.js"></script>
+<script src="shim.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+let DATA, G = [], byName = new Map();
+let fam = 'w', cur = null, view = { z: 0.6, ox: 0, oy: 0 };
+let C = null;                      // current contours: [[x, y, x, y, ...], ...] font units, y up
+let sel = new Set();               // "ci:pi"
+const saved = { w: {}, b: {}, p: {} };   // db edits per family
+const local = { w: {}, b: {}, p: {} };   // unsaved edits of this visit
+const COL = { w: 'white', b: 'black' };   // db collection per family
+const hist = new Map();            // per sign+family: {undo: [], redo: []}
+let db = null, downloads = null, saveTimer = null;
+
+// ---------- data ----------
+async function load() {
+  const BLOB = (await (await atelierData('signs.b64')).text()).trim();
+  const bin = Uint8Array.from(atob(BLOB), c => c.charCodeAt(0));
+  DATA = JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
+  G = DATA.glyphs;
+  // Borger's drawings that are not in the font (no code point; borger_refs.py, outlines made by the font build):
+  // ordinary entries named r<MZL file>, which can be opened, edited and saved like any sign
+  for (const r of DATA.refs || []) G.push({ n: r.n, l: 'Borger’s drawing ' + r.mz + ', not in the font', a: r.a, w: r.w, b: r.b, p: r.p, q: [], mz: [r.mz], go: r.go || '', ref: true, lig: false });
+  G.forEach(g => byName.set(g.n, g));
+}
+const isRef = n => n[0] === 'r';
+const cpLabel = n => isRef(n) ? 'No code point' : n.split('_').map(p => 'U+' + p.slice(1)).join(' ');
+const chars = n => isRef(n) ? '' : n.split('_').map(p => String.fromCodePoint(parseInt(p.slice(1), 16))).join('');
+function base(g, f) { return f === 'w' ? g.w : f === 'b' ? g.b : g.p; }
+function contoursOf(n, f) {
+  if (local[f][n]) return local[f][n];
+  if (saved[f][n]) return saved[f][n].c.map(o => o.p);
+  return base(byName.get(n), f);
+}
+const isEdited = (n, f) => !!(local[f][n] || saved[f][n]);
+function pathD(cs, flip, H) {
+  let d = '';
+  for (const c of cs) {
+    if (c.length < 6) continue;
+    for (let i = 0; i < c.length; i += 2) d += (i ? 'L' : 'M') + c[i] + ' ' + (flip ? H - c[i + 1] : c[i + 1]);
+    d += 'Z';
+  }
+  return d;
+}
+function miniSvg(n, f, h, cs) {
+  const g = byName.get(n), H = DATA.asc;
+  const w = Math.max(g.a, 1), vbH = DATA.asc + DATA.desc;
+  const st = h ? ` style="height:${h}px;width:${(w / vbH * h).toFixed(1)}px"` : '';
+  return `<svg viewBox="0 0 ${w} ${vbH}"${st} aria-hidden="true"><path fill-rule="nonzero" d="${pathD(cs || contoursOf(n, f), true, H)}"/></svg>`;
+}
+
+// ---------- list ----------
+// Gottstein: a vertical, b horizontal, c ↘, d ↗, w Winkelhaken. A query like a2b5 finds signs with exactly those
+// counts (other kinds free), by the code counted on the drawing (go) or the sign list's (gl)
+const GOT = /^([abcdw]\d+)+$/;
+const gotPairs = s => { const m = {}; for (const [, k, v] of s.matchAll(/([abcdw])(\d+)/g)) m[k] = +v; return m; };
+const gotMatch = (w, g) => { const q = gotPairs(w); return [g.go, ...(g.gl || [])].some(c => { if (!c) return false; const p = gotPairs(c); return Object.keys(q).every(k => p[k] === q[k]); }); };
+// MesZL: "MZL 662" / "mzl662" finds the signs numbered 662 and its variants (662v …)
+const mzMatch = (w, g) => { const m = /^(?:mzl|meszl)(\d+)([a-z0-9]*)$/.exec(w); if (!m) return false;
+  return (g.mz || []).some(z => { z = z.toLowerCase(); return m[2] ? z === m[1] + m[2] : z === m[1] || (z.startsWith(m[1]) && !/\d/.test(z[m[1].length])); }); };
+const mzTag = g => g.mz && g.mz.length ? `<span class="mz">${g.mz[0].startsWith('Deimel') ? '' : 'MZL '}${g.mz.join(', ')}${g.src ? ' · drawing ' + g.src.join(', ') : ''}</span>` : '';
+const nameOf = g => g.sn || g.l;                   // the standard name (× + & % . -gunû), else the label
+const goTag = g => g.go ? `<div class="go" title="Gottstein, counted on the drawing">${g.go}</div>` : '';
+// Order: Unicode (code point) or MesZL. In MesZL order a sign stands under its lowest MesZL number; one numbered
+// with a variant (662v, 16a) is indented under the number, and a bare number in the search (662, 175v2) means MesZL
+let order = 'u';
+try { if (localStorage.getItem('atelier-order') === 'm') order = 'm'; } catch (e) {}
+const mzKey = z => { const m = /^(\d+)(.*)$/.exec(z) || [0, '99999', z]; return [+m[1], m[2].toLowerCase()]; };
+const mzFirst = g => (g.mz || []).map(mzKey).sort((a, b) => (a[0] - b[0]) || (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))[0];
+function renderList() {
+  let q = $('q').value.trim().toLowerCase().replace(/\b(meszl|mzl)\s+(?=\d)/g, '$1');
+  if (order === 'm') q = q.replace(/(^|\s)(\d{1,3}[a-z]?\d?(?:v\d*)?)(?=\s|$)/g, '$1mzl$2');
+  const only = $('only-ed').checked;
+  const words = q.split(/\s+/).filter(Boolean);
+  const rows = []; let n = 0;
+  // Borger's drawings that are not in the font (g.ref) stand in MZL order under their number, in Unicode order at the end
+  let list = G;
+  if (order === 'm') list = G.map((g, i) => [g, mzFirst(g), i]).sort((a, b) => !a[1] - !b[1] || (a[1] && ((a[1][0] - b[1][0]) || (a[1][1] < b[1][1] ? -1 : a[1][1] > b[1][1] ? 1 : 0))) || a[2] - b[2]).map(x => x[0]);
+  let lastBase = null, refHead = false;
+  for (const g of list) {
+    const hay = (g.n.replace(/u/g, ' ') + ' ' + g.l + ' ' + (g.sn || '') + ' ' + chars(g.n)).toLowerCase();
+    if (words.some(w => mzMatch(w, g) ? false : /^(mzl|meszl)\d/.test(w) ? true : !hay.includes(w.replace(/^u\+?/, '')) && !(GOT.test(w) && gotMatch(w, g)))) continue;
+    const ed = isEdited(g.n, fam);
+    if (only && !ed) continue;
+    n++;
+    let cls = 'item';
+    if (order === 'm') {
+      const k = mzFirst(g), base = k ? (k[0] >= 99999 ? 'deimel' : k[0]) : 'none';
+      if (base !== lastBase) { rows.push(`<div class="mzh">${base === 'deimel' ? 'Deimel numbers (Borger’s drawings, not in the font)' : k ? 'MZL ' + base : 'No MesZL number'}</div>`); lastBase = base; }
+      if (k && k[1] && base !== 'deimel') cls += ' var';
+    } else if (g.ref && !refHead) { rows.push('<div class="mzh">No code point: Borger’s drawings not in the font</div>'); refHead = true; }
+    rows.push(itemHtml(g, cls, ed));
+  }
+  $('list').innerHTML = rows.join('') || '<p class="note" style="padding:12px">No sign matches. Search by code point (12006), name (KA TIMES), Gottstein code (a2b5, w3) or MesZL number (MZL 662; in MZL order also just 662).</p>';
+  $('count').textContent = n + ' of ' + G.length;
+}
+function setOrder(o) {
+  order = o; $('ord-u').setAttribute('aria-pressed', o === 'u'); $('ord-m').setAttribute('aria-pressed', o === 'm');
+  $('q').placeholder = o === 'm' ? 'Search: 662, 175v2, HI, KA TIMES, a2b5, U+12006…' : 'Search: 12006, HI, KA TIMES, a2b5, MZL 662…';
+  try { localStorage.setItem('atelier-order', o); } catch (e) {}
+  renderList(); const el = $('list').querySelector('[aria-selected="true"]'); if (el) el.scrollIntoView({ block: 'center' });
+}
+function itemInner(g, ed) {
+  return `${miniSvg(g.n, fam, 0)}<div style="min-width:0"><div class="cp">${g.ref ? '' : cpLabel(g.n)}${mzTag(g)}${ed ? '<span class="tag ed">edited</span>' : ''}${g.lig ? '<span class="tag seq">sequence</span>' : ''}${g.gen || g.built ? '<span class="tag new" title="Not drawn by Borger: built for the font from his signs">built</span>' : ''}${g.ref ? '<span class="tag nf" title="Borger drew it, but it has no code point and is not in the font">not in the font</span>' : ''}</div><div class="nm" title="${g.l}">${g.ref ? 'Borger’s drawing' : nameOf(g)}</div>${goTag(g)}</div>`;
+}
+const itemHtml = (g, cls, ed) => `<div class="${cls}" role="option" data-n="${g.n}" aria-selected="${g.n === cur}">${itemInner(g, ed)}</div>`;
+function refreshItem(n) {
+  const el = $('list').querySelector(`[data-n="${n}"]`); if (!el) return;
+  el.innerHTML = itemInner(byName.get(n), isEdited(n, fam));
+}
+$('list').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) open(it.dataset.n); });
+
+// ---------- open / state ----------
+function H() { const k = fam + ':' + cur; if (!hist.has(k)) hist.set(k, { undo: [], redo: [] }); return hist.get(k); }
+function open(n, keepView) {
+  if (n !== cur) gsel = -1;
+  cur = n; sel.clear(); scisCuts = []; scisBase = null;
+  C = contoursOf(n, fam).map(c => c.slice());
+  try { localStorage.setItem('atelier-cur', n); } catch (e) {}
+  $('list').querySelectorAll('.item').forEach(el => el.setAttribute('aria-selected', el.dataset.n === n));
+  if (!keepView) fit();
+  render(); renderInfo(); renderOrig(); renderProof();
+}
+function snapshot() { H().undo.push(JSON.stringify(C)); if (H().undo.length > 300) H().undo.shift(); H().redo.length = 0; }
+function changed() {
+  local[fam][cur] = C.map(c => c.slice());
+  refreshItem(cur); renderInfo(); renderProof();
+  setStatus('Unsaved…');
+  clearTimeout(saveTimer); const f = fam, n = cur; saveTimer = setTimeout(() => save(f, n), 900);
+}
+function undo() { const h = H(); if (!h.undo.length) return; h.redo.push(JSON.stringify(C)); C = JSON.parse(h.undo.pop()); sel.clear(); render(); changed(); }
+function redo() { const h = H(); if (!h.redo.length) return; h.undo.push(JSON.stringify(C)); C = JSON.parse(h.redo.pop()); sel.clear(); render(); changed(); }
+
+// ---------- saving ----------
+function setStatus(t, warn) { $('status').textContent = t; $('status').classList.toggle('warn', !!warn); }
+async function save(f, n) {
+  if (!local[f][n]) return;
+  if (!db) { setStatus('Not saved (no storage here)', true); return; }
+  const sent = local[f][n];
+  // the advance follows the outline: its right edge + 2 squares (as the fonts have it), so a sign made wider or
+  // narrower keeps its spacing
+  const xMax = Math.max(0, ...sent.map(c => Math.max(...c.filter((_, i) => !(i % 2)))));
+  const a = Math.ceil((xMax + 2 * DATA.unit) / DATA.unit) * DATA.unit;
+  const body = { c: sent.map(p => ({ p })), a, family: COL[f], updatedAt: new Date().toISOString() };
+  setStatus('Saving…');
+  try {
+    await db.doc(COL[f] + '/' + n).set(body); saved[f][n] = body;
+    if (local[f][n] === sent) { delete local[f][n]; setStatus('Saved'); }     // newer edits made meanwhile wait for their own save
+    if (n === cur && f === fam) renderInfo();
+  }
+  catch (e) { setStatus(e && e.code === 'invalid_argument' ? 'Read-only for you' : 'Not saved, retrying', true); if (!(e && e.code === 'invalid_argument')) saveTimer = setTimeout(() => save(f, n), 4000); }
+}
+async function resetSign() {
+  const f = fam, n = cur; snapshot();
+  delete local[f][n];
+  if (db && saved[f][n]) { try { await db.doc(COL[f] + '/' + n).delete(); delete saved[f][n]; } catch (e) { setStatus('Reset not saved', true); } }
+  C = base(byName.get(n), f).map(c => c.slice()); sel.clear(); render(); renderInfo(); renderProof(); refreshItem(n); setStatus('Back to the built sign');
+}
+async function connect() {
+  try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+  try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+  $('export').disabled = !downloads;
+  if (!db) { setStatus('Edits stay in this visit only', true); return; }
+  setStatus('Ready');
+  for (const [f, col] of Object.entries(COL)) {
+    db.collection(col).onSnapshot(snap => {
+      const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); }); saved[f] = m;
+      renderList(); if (cur) renderProofLine();
+      if (cur && f === fam && !local[f][cur] && !dragging && !nudging) { C = contoursOf(cur, fam).map(c => c.slice()); render(); renderInfo(); renderProof(); }
+    }, () => setStatus('Saved edits could not load', true));
+  }
+  db.collection('guides').onSnapshot(snap => {
+    snap.docs.forEach(d => { if (!(dragging && d.id === cur)) guides[d.id] = (d.data().g || []).map(o => ({ x: o.x, y: o.y, a: o.a })); });
+    if (gsel >= GL().length) gsel = -1;
+    if (cur) { render(); renderInfo(); }
+  }, () => setStatus('Guide lines could not load', true));
+}
+
+// ---------- board ----------
+const board = $('board');
+function size() { const r = board.getBoundingClientRect(); return { w: r.width, h: r.height }; }
+const toS = (x, y) => [x * view.z + view.ox, -y * view.z + view.oy];
+const toF = (sx, sy) => [(sx - view.ox) / view.z, -(sy - view.oy) / view.z];
+function fit() {
+  const g = byName.get(cur), { w, h } = size(); if (!w) return;
+  const W = g.a, top = DATA.asc, bot = -DATA.desc, Hh = top - bot;
+  view.z = Math.min((w - 60) / W, (h - 70) / Hh);
+  view.ox = (w - W * view.z) / 2; view.oy = (h - Hh * view.z) / 2 + top * view.z;
+}
+let hot = null, smartLines = [], marquee = null, readout = null;
+// ---------- guide lines (per sign, shared by both families): {x, y, a} font units, degrees anticlockwise ----------
+const RAD = Math.PI / 180, guides = {}, guideTimers = {};
+let gsel = -1;
+const GL = () => (guides[cur] = guides[cur] || []);
+const normA = a => ((a % 180) + 180) % 180;
+const fmtA = a => (Math.round(a * 10) / 10) + '°';
+function snapAngle(a, shift) { if (shift) return Math.round(a / 45) * 45; const s = Math.round(a / 15) * 15; return Math.abs(a - s) < 3 ? s : Math.round(a * 10) / 10; }
+function saveGuides(n = cur) {
+  clearTimeout(guideTimers[n]);
+  guideTimers[n] = setTimeout(async () => { if (!db) return; try { await db.doc('guides/' + n).set({ g: guides[n] || [], updatedAt: new Date().toISOString() }); } catch (e) { setStatus('Guide lines not saved', true); } }, 600);
+}
+function addGuide() {
+  const p = sel.size === 1 ? getP([...sel][0]) : [Math.round(byName.get(cur).a / 2), DATA.cap / 2];
+  let x = p[0], y = p[1];
+  while (GL().some(g => Math.abs(g.x - x) < 1 && Math.abs(g.y - y) < 1)) { x += 2 * DATA.unit; y += 2 * DATA.unit; }   // beside, not on top of, another
+  GL().push({ x, y, a: 45 }); gsel = GL().length - 1; render(); renderInfo(); saveGuides(); setStatus('Guide line added: drag it, or Delete to remove');
+}
+function deleteGuide() {
+  if (gsel < 0) return;
+  const g0 = GL()[gsel], same = g => Math.abs(g.x - g0.x) < 1 && Math.abs(g.y - g0.y) < 1 && Math.abs(normA(g.a) - normA(g0.a)) < 0.01;
+  guides[cur] = GL().filter(g => !same(g)); gsel = -1; render(); renderInfo(); saveGuides(); setStatus('Guide line deleted');
+}
+function turnGuide(by) {   // the selected guide line (or the only one) turned by 45°
+  if (!cur) return;
+  if (gsel < 0 && GL().length === 1) gsel = 0;
+  if (gsel < 0) { setStatus('Tap a guide line first, then turn it', true); return; }
+  GL()[gsel].a = normA(GL()[gsel].a + by); render(); renderInfo(); saveGuides(); setStatus('Guide line at ' + fmtA(GL()[gsel].a));
+}
+function clearGuides() { if (!cur || !GL().length) return; guides[cur] = []; gsel = -1; render(); renderInfo(); saveGuides(); setStatus('All guide lines of this sign deleted'); }
+function farLine(px, py, a, cls, label) {   // a line across the whole board, in screen coordinates
+  const [x, y] = toS(px, py), c = Math.cos(a * RAD), s = -Math.sin(a * RAD), L = 5000;
+  return { x1: x - L * c, y1: y - L * s, x2: x + L * c, y2: y + L * s, cls, label };
+}
+function guideAt(sx, sy, tol = 5) {
+  let best = -1, bd = tol;
+  GL().forEach((gd, i) => { const [x, y] = toS(gd.x, gd.y), c = Math.cos(gd.a * RAD), s = -Math.sin(gd.a * RAD), d = Math.abs((sx - x) * s - (sy - y) * c); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function render() {
+  if (!cur) return;
+  const g = byName.get(cur), { w, h } = size();
+  const m = `matrix(${view.z} 0 0 ${-view.z} ${view.ox} ${view.oy})`;
+  // grid of Borger's squares, only where it is readable
+  let grid = '';
+  if (view.z * DATA.unit >= 9) {
+    const [x0, y1] = toF(0, 0), [x1, y0] = toF(w, h), u = DATA.unit;
+    for (let x = Math.ceil(x0 / u) * u; x <= x1; x += u) grid += `M${x} ${y0}V${y1}`;
+    for (let y = Math.ceil(y0 / u) * u; y <= y1; y += u) grid += `M${x0} ${y}H${x1}`;
+  }
+  const d = pathD(C, false);
+  const ref = $('show-ref').checked ? `<path class="ref" d="${pathD(g.r || g.p, false)}"/>` : '';
+  const big = 1e5;
+  let s = `<g transform="${m}"><path class="grid" d="${grid}"/>${ref}<path class="ink" fill-rule="nonzero" d="${d}"/>` +
+    `<path class="guide g-base" d="M${-big} 0H${big}"/><path class="guide g-cap" d="M${-big} ${DATA.cap}H${big}"/>` +
+    `<path class="guide g-adv" d="M0 ${-big}V${big}M${g.a} ${-big}V${big}"/>` +
+    GL().map((gd, i) => { const c = Math.cos(gd.a * RAD), sn = Math.sin(gd.a * RAD); return `<path class="uguide${i === gsel ? ' sel' : ''}" d="M${gd.x - big * c} ${gd.y - big * sn}L${gd.x + big * c} ${gd.y + big * sn}"/>`; }).join('') +
+    `<path class="outline" d="${d}"/></g>`;
+  for (const l of smartLines) {
+    s += `<line class="${l.cls}" x1="${l.x1.toFixed(1)}" y1="${l.y1.toFixed(1)}" x2="${l.x2.toFixed(1)}" y2="${l.y2.toFixed(1)}"/>`;
+    if (l.label) s += `<text class="angle" x="${(l.lx + 8).toFixed(1)}" y="${(l.ly - 8).toFixed(1)}">${l.label}</text>`;
+  }
+  if (!$('v-solid').getAttribute('aria-pressed').includes('true')) {
+    const r = 3;
+    C.forEach((c, ci) => { for (let i = 0; i < c.length; i += 2) {
+      const [sx, sy] = toS(c[i], c[i + 1]), k = ci + ':' + i / 2;
+      s += `<rect class="node${sel.has(k) ? ' sel' : ''}${hot === k ? ' hot' : ''}" x="${(sx - r).toFixed(1)}" y="${(sy - r).toFixed(1)}" width="${2 * r}" height="${2 * r}"/>`;
+    } });
+  }
+  if (gsel >= 0 && GL()[gsel]) {   // handles of the selected guide line: move (round), rotate (filled), and its angle
+    const gd = GL()[gsel], [ax, ay] = toS(gd.x, gd.y), rx = ax + 70 * Math.cos(gd.a * RAD), ry = ay - 70 * Math.sin(gd.a * RAD);
+    s += `<line class="ray" x1="${ax}" y1="${ay}" x2="${rx}" y2="${ry}"/><circle class="ghandle" cx="${ax}" cy="${ay}" r="5"/><circle class="ghandle rot" cx="${rx}" cy="${ry}" r="5"/>` +
+      `<text class="angle" x="${rx + 9}" y="${ry - 9}">${fmtA(normA(gd.a))}</text>`;
+  }
+  if (scisMode) for (const [p, q] of scisCuts) {   // cut lines marked, waiting for a second cut
+    const [ax, ay] = toS(...p), [bx, by] = toS(...q);
+    s += `<line class="cutline" x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}"/>`;
+  }
+  if (scisMode && dragging && dragging.mode === 'scis' && dragging.moved && dragging.end) {   // the cut line being drawn
+    const [ax, ay] = toS(...dragging.start), [bx, by] = toS(...dragging.end);
+    s += `<line class="cutline" x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}"/>`;
+  }
+  if (holeMode || liftMode) {   // the hole (or the area to lift) being drawn
+    const S = p => toS(p[0], p[1]).map(v => v.toFixed(1)).join(' ');
+    if (dragging && (dragging.mode === 'hole' || dragging.mode === 'lift') && dragging.moved && dragging.end) {
+      const [x0, y0] = dragging.start, [x1, y1] = dragging.end;
+      s += `<path class="holedraft" d="M${S([x0, y0])}L${S([x1, y0])}L${S([x1, y1])}L${S([x0, y1])}Z"/>`;
+    } else if (hole) {
+      const ps = [...hole.pts, hole.cur];
+      s += `<path class="holedraft" d="M${ps.map(S).join('L')}${hole.pts.length >= 3 ? 'Z' : ''}"/>`;
+      hole.pts.forEach((p, i) => { const [x, y] = toS(p[0], p[1]); s += `<rect class="holenode${i ? '' : ' first'}" x="${x - 4}" y="${y - 4}" width="8" height="8"/>`; });
+    }
+  }
+  if (ghost) s += `<rect class="node ghost" x="${(ghost[0] - 4).toFixed(1)}" y="${(ghost[1] - 4).toFixed(1)}" width="8" height="8"/>`;
+  if (readout) s += `<text class="angle" x="${readout.x + 14}" y="${readout.y + 22}">${readout.text}</text>`;
+  if (marquee) { const [a, b, c2, d2] = marquee; s += `<rect class="marquee" x="${Math.min(a, c2)}" y="${Math.min(b, d2)}" width="${Math.abs(c2 - a)}" height="${Math.abs(d2 - b)}"/>`; }
+  board.innerHTML = s;
+  $('z-lvl').textContent = Math.round(view.z / 0.6 * 100) + '%';
+}
+let hitScale = 1;   // 2 for fingers
+function nodeAt(sx, sy, tol = 7 * hitScale) {
+  let best = null, bd = tol * tol;
+  C.forEach((c, ci) => { for (let i = 0; i < c.length; i += 2) { const [x, y] = toS(c[i], c[i + 1]); const dd = (x - sx) ** 2 + (y - sy) ** 2; if (dd <= bd) { bd = dd; best = ci + ':' + i / 2; } } });
+  return best;
+}
+function segmentAt(sx, sy, tol = 6 * hitScale) {
+  let best = null, bd = tol;
+  C.forEach((c, ci) => { const n = c.length / 2; for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, [ax, ay] = toS(c[2 * i], c[2 * i + 1]), [bx, by] = toS(c[2 * j], c[2 * j + 1]);
+    const vx = bx - ax, vy = by - ay, L = vx * vx + vy * vy || 1, t = Math.max(0, Math.min(1, ((sx - ax) * vx + (sy - ay) * vy) / L));
+    const dd = Math.hypot(ax + t * vx - sx, ay + t * vy - sy);
+    if (dd < bd) { bd = dd; best = { ci, i, t }; }
+  } });
+  return best;
+}
+const getP = k => { const [ci, pi] = k.split(':').map(Number); return [C[ci][2 * pi], C[ci][2 * pi + 1]]; };
+const setP = (k, x, y) => { const [ci, pi] = k.split(':').map(Number); C[ci][2 * pi] = x; C[ci][2 * pi + 1] = y; };
+const snapV = v => { const s = +$('snap').value; return s ? Math.round(v / s) * s : Math.round(v); };
+// Snapping of a dragged node: angle rays from its neighbouring nodes (0/45/90/135° or every 15°), the guide lines,
+// and (smart guides) the X / Y of every other node and of the frame. Two lines close by: their crossing.
+function neighbours(key) {
+  const [ci, pi] = key.split(':').map(Number), n = C[ci].length / 2, out = [];
+  for (const j of [(pi - 1 + n) % n, (pi + 1) % n]) if (j !== pi && !sel.has(ci + ':' + j)) out.push([C[ci][2 * j], C[ci][2 * j + 1]]);
+  return out;
+}
+function snapPoint(tx, ty, key, from = []) {   // key: the dragged node (or null); from: extra points with angle rays
+  const tol = 6 / view.z, L = [], step = +$('angstep').value, g = byName.get(cur);
+  if (step) for (const [nx, ny] of [...(key ? neighbours(key) : []), ...from]) for (let a = 0; a < 180; a += step) L.push({ px: nx, py: ny, a, kind: 'ray', r: 0 });
+  GL().forEach(gd => L.push({ px: gd.x, py: gd.y, a: gd.a, kind: 'guide', r: 0 }));
+  if ($('smart').checked) {
+    const pts = [[0, 0], [g.a, DATA.cap]];
+    C.forEach((c, ci) => { for (let i = 0; i < c.length; i += 2) if (!sel.has(ci + ':' + i / 2)) pts.push([c[i], c[i + 1]]); });
+    for (const [x, y] of pts) { L.push({ px: x, py: y, a: 90, kind: 'align', r: 1 }); L.push({ px: x, py: y, a: 0, kind: 'align', r: 1 }); }
+  }
+  for (const l of L) { l.dx = Math.cos(l.a * RAD); l.dy = Math.sin(l.a * RAD); l.d = Math.abs((tx - l.px) * l.dy - (ty - l.py) * l.dx); }
+  const near = L.filter(l => l.d < tol).sort((p, q) => (p.d - q.d) || (p.r - q.r));
+  let x, y, used = [];
+  if (near.length) {
+    const a = near[0]; let pair = null;
+    for (const b of near.slice(1)) {
+      const cr = a.dx * b.dy - a.dy * b.dx; if (Math.abs(cr) < 0.2) continue;
+      const t = ((b.px - a.px) * b.dy - (b.py - a.py) * b.dx) / cr, ix = a.px + t * a.dx, iy = a.py + t * a.dy;
+      if (Math.hypot(ix - tx, iy - ty) < tol * 1.5) { pair = [b, ix, iy]; break; }
+    }
+    if (pair) { x = pair[1]; y = pair[2]; used = [a, pair[0]]; }
+    else {
+      const t = (tx - a.px) * a.dx + (ty - a.py) * a.dy; x = a.px + t * a.dx; y = a.py + t * a.dy; used = [a];
+      if (a.a === 90) y = snapV(y); if (a.a === 0) x = snapV(x);
+    }
+  } else { x = snapV(tx); y = snapV(ty); }
+  x = Math.round(x); y = Math.round(y);
+  for (const l of used) {
+    if (l.kind === 'ray') {   // from the neighbour through the node, with its angle
+      const [ax, ay] = toS(l.px, l.py), [bx, by] = toS(x, y), ex = ax + (bx - ax) * 1.5, ey = ay + (by - ay) * 1.5;
+      smartLines.push({ x1: ax - (bx - ax) * 0.3, y1: ay - (by - ay) * 0.3, x2: ex, y2: ey, cls: 'ray', label: fmtA(l.a), lx: ex, ly: ey });
+    } else smartLines.push(farLine(l.px, l.py, l.a, l.kind === 'guide' ? 'ray' : 'smart'));
+  }
+  return [x, y];
+}
+function segAngles(key) {   // angles of the two lines meeting at a node
+  const [ci, pi] = key.split(':').map(Number), n = C[ci].length / 2, x = C[ci][2 * pi], y = C[ci][2 * pi + 1];
+  return [(pi - 1 + n) % n, (pi + 1) % n].map(j => normA(Math.atan2(C[ci][2 * j + 1] - y, C[ci][2 * j] - x) / RAD));
+}
+
+// ---------- pointer ----------
+let dragging = null, spaceDown = false;
+function local2(e) { const r = board.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+let lockAng = false, addSel = false, wholeSel = false;
+function withMods(e, shift) {   // the pointer event with the touch buttons' Shift / Ctrl added
+  return { clientX: e.clientX, clientY: e.clientY, button: e.button, pointerId: e.pointerId, pointerType: e.pointerType,
+    shiftKey: e.shiftKey || shift, ctrlKey: e.ctrlKey || wholeSel, metaKey: e.metaKey, altKey: e.altKey };
+}
+// two fingers: pinch zooms, moving them pans (a drag the first finger began is taken back)
+const touches = new Map(); let pinch = null;
+function pinchState() { const [a, b] = [...touches.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; }
+board.addEventListener('pointerdown', e => {
+  hitScale = e.pointerType === 'touch' ? 2 : 1;
+  if (e.pointerType === 'touch') {
+    const [tx, ty] = local2(e); touches.set(e.pointerId, { x: tx, y: ty });
+    if (touches.size >= 2) {
+      if (dragging && dragging.mode === 'move' && dragging.moved) { for (const [q, [x, y]] of dragging.start) setP(q, x, y); H().undo.pop(); }
+      dragging = null; marquee = null; smartLines = []; readout = null; pinch = pinchState(); render(); return;
+    }
+  }
+  e = withMods(e, addSel);
+  if (!cur) return;
+  board.setPointerCapture(e.pointerId);
+  const [sx, sy] = local2(e);
+  if (spaceDown || e.button === 1) { dragging = { mode: 'pan', sx, sy, ox: view.ox, oy: view.oy }; board.classList.add('pan'); return; }
+  if (liftMode) { dragging = { mode: 'lift', sx, sy, start: holePoint(sx, sy, e), moved: false }; return; }
+  if (scisMode) { dragging = { mode: 'scis', sx, sy, start: holePoint(sx, sy, e), moved: false }; return; }
+  if (holeMode) {   // a click adds a corner (on the first corner: close), a drag draws a rectangle
+    if (hole && hole.pts.length >= 3) { const [x0, y0] = toS(...hole.pts[0]); if (Math.hypot(sx - x0, sy - y0) < 9) { finishHole(); return; } }
+    dragging = { mode: 'hole', sx, sy, start: holePoint(sx, sy, e), moved: false }; return;
+  }
+  const now = performance.now(), dbl = now - lastDown.t < 400 && Math.hypot(sx - lastDown.x, sy - lastDown.y) < 6;
+  lastDown = { t: dbl ? 0 : now, x: sx, y: sy };
+  if (dbl && addNodeAt(sx, sy)) { renderInfo(); return; }
+  if ((addMode || e.altKey) && !nodeAt(sx, sy)) {   // add a node on the line and keep dragging it
+    const nk = addNodeAt(sx, sy, 10);
+    if (nk) { gsel = -1; dragging = { mode: 'move', key: nk, sx, sy, start: new Map([[nk, getP(nk)]]), moved: false }; renderInfo(); return; }
+  }
+  if (gsel >= 0 && GL()[gsel]) {   // handles of the selected guide line
+    const gd = GL()[gsel], [ax, ay] = toS(gd.x, gd.y), rx = ax + 70 * Math.cos(gd.a * RAD), ry = ay - 70 * Math.sin(gd.a * RAD);
+    if (Math.hypot(sx - rx, sy - ry) < 9) { dragging = { mode: 'grot', i: gsel }; return; }
+    if (Math.hypot(sx - ax, sy - ay) < 8) { dragging = { mode: 'gmove', i: gsel, sx, sy, gx: gd.x, gy: gd.y }; return; }
+  }
+  const k = nodeAt(sx, sy);
+  if (!k) {
+    const gi = guideAt(sx, sy);
+    if (gi >= 0) {   // grab the line where it was clicked
+      const gd = GL()[gi], [fx, fy] = toF(sx, sy), c = Math.cos(gd.a * RAD), sn = Math.sin(gd.a * RAD), t = (fx - gd.x) * c + (fy - gd.y) * sn;
+      gd.x += t * c; gd.y += t * sn; gsel = gi;
+      dragging = { mode: 'gmove', i: gi, sx, sy, gx: gd.x, gy: gd.y }; render(); renderInfo(); return;
+    }
+    gsel = -1;
+    const ci = contourAt(sx, sy);
+    if (ci !== null) {   // on a contour's line, or inside a hollow: pick up the whole contour and move it
+      const pk = pieceKeys(ci);
+      if (!e.shiftKey && !pk.every(q => sel.has(q))) sel = new Set();
+      pk.forEach(q => sel.add(q));
+      const [fx, fy] = toF(sx, sy), key = contourKeys(ci).reduce((m, q) => { const [x, y] = getP(q), [mx, my] = getP(m); return Math.hypot(x - fx, y - fy) < Math.hypot(mx - fx, my - fy) ? q : m; });
+      dragging = { mode: 'move', key, sx, sy, start: new Map([...sel].map(q => [q, getP(q)])), moved: false };
+      render(); renderInfo(); return;
+    }
+  } else gsel = -1;
+  if (k) {
+    if (e.ctrlKey || e.metaKey) { if (!e.shiftKey) sel = new Set(); contourKeys(+k.split(':')[0]).forEach(q => sel.add(q)); }   // the whole contour
+    else if (e.shiftKey) { sel.has(k) ? sel.delete(k) : sel.add(k); render(); renderInfo(); if (!sel.has(k)) return; }
+    else if (!sel.has(k)) { sel = new Set([k]); }
+    const start = new Map([...sel].map(q => [q, getP(q)]));
+    dragging = { mode: 'move', key: k, sx, sy, start, moved: false };
+  } else {
+    if (!e.shiftKey) sel.clear();
+    dragging = { mode: 'box', sx, sy, base: new Set(sel) };
+  }
+  render(); renderInfo();
+});
+board.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
+    const [tx, ty] = local2(e); touches.set(e.pointerId, { x: tx, y: ty });
+    if (pinch) {
+      if (touches.size >= 2) { const q = pinchState(); view.ox += q.mx - pinch.mx; view.oy += q.my - pinch.my; zoomAt(q.mx, q.my, q.d / pinch.d); pinch = q; }
+      return;
+    }
+  }
+  e = withMods(e, lockAng);
+  const [sx, sy] = local2(e);
+  if (cur && (holeMode || liftMode || scisMode) && (!dragging || dragging.mode === 'hole' || dragging.mode === 'lift' || dragging.mode === 'scis')) {
+    const p = dragging && dragging.mode === 'scis' ? scisPoint(sx, sy, e) : holePoint(sx, sy, e);
+    if (dragging && (dragging.moved || Math.hypot(sx - dragging.sx, sy - dragging.sy) > 5)) { dragging.moved = true; dragging.end = p; }
+    else if (hole) hole.cur = p;
+    render(); return;
+  }
+  if (!dragging) {
+    const k = cur ? nodeAt(sx, sy) : null, gh = cur && (addMode || e.altKey) ? ghostAt(sx, sy) : null;
+    board.style.cursor = cur && !k && !addMode && !holeMode && !liftMode && !scisMode && !spaceDown && !e.altKey && contourAt(sx, sy) !== null ? 'move' : '';
+    if (k !== hot || String(gh) !== String(ghost)) { hot = k; ghost = gh; render(); }
+    return;
+  }
+  if (dragging.mode === 'pan') { view.ox = dragging.ox + sx - dragging.sx; view.oy = dragging.oy + sy - dragging.sy; render(); return; }
+  if (dragging.mode === 'gmove') {   // move a guide line; it clicks onto a node
+    const gd = GL()[dragging.i]; let nx = dragging.gx + (sx - dragging.sx) / view.z, ny = dragging.gy - (sy - dragging.sy) / view.z;
+    const [psx, psy] = toS(nx, ny), k = nodeAt(psx, psy, 8); if (k) [nx, ny] = getP(k);
+    gd.x = nx; gd.y = ny; dragging.moved = true; render(); renderInfo(); return;
+  }
+  if (dragging.mode === 'grot') {    // rotate a guide line around its round handle
+    const gd = GL()[dragging.i], [fx, fy] = toF(sx, sy);
+    gd.a = snapAngle(Math.atan2(fy - gd.y, fx - gd.x) / RAD, e.shiftKey); dragging.moved = true; render(); renderInfo(); return;
+  }
+  if (dragging.mode === 'box') {
+    marquee = [dragging.sx, dragging.sy, sx, sy];
+    const [a, b] = toF(Math.min(dragging.sx, sx), Math.max(dragging.sy, sy)), [c2, d2] = toF(Math.max(dragging.sx, sx), Math.min(dragging.sy, sy));
+    sel = new Set(dragging.base);
+    C.forEach((c, ci) => { for (let i = 0; i < c.length; i += 2) if (c[i] >= a && c[i] <= c2 && c[i + 1] >= b && c[i + 1] <= d2) sel.add(ci + ':' + i / 2); });
+    render(); return;
+  }
+  // move: offset of the grabbed node, constrained and snapped, applied to all selected nodes
+  let dx = (sx - dragging.sx) / view.z, dy = -(sy - dragging.sy) / view.z;
+  if (!dragging.moved && Math.hypot(sx - dragging.sx, sy - dragging.sy) < 2) return;
+  if (!dragging.moved) { snapshot(); dragging.moved = true; }
+  if (e.shiftKey) {   // 0 / 45 / 90 degrees
+    const ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4), len = Math.hypot(dx, dy) * Math.cos(Math.atan2(dy, dx) - ang);
+    dx = len * Math.cos(ang); dy = len * Math.sin(ang);
+  }
+  const [gx, gy] = dragging.start.get(dragging.key);
+  let tx = gx + dx, ty = gy + dy;
+  smartLines = [];
+  if (e.shiftKey) { tx = snapV(tx); ty = snapV(ty); } else [tx, ty] = snapPoint(tx, ty, dragging.key);
+  const ddx = tx - gx, ddy = ty - gy;
+  for (const [q, [x, y]] of dragging.start) setP(q, Math.round(x + ddx), Math.round(y + ddy));
+  const [rsx, rsy] = toS(tx, ty); readout = { x: rsx, y: rsy, text: segAngles(dragging.key).map(fmtA).join(' · ') };
+  render(); renderInfo();
+});
+function endDrag() {
+  if (!dragging) return;
+  const was = dragging; dragging = null; marquee = null; smartLines = []; readout = null; board.classList.remove('pan');
+  if (was.mode === 'scis') {
+    if (was.moved && was.end && (was.start[0] !== was.end[0] || was.start[1] !== was.end[1])) scissorCut(was.start, was.end);
+    render(); return;
+  }
+  if (was.mode === 'lift') {
+    if (was.moved && was.end) { const [x0, y0] = was.start, [x1, y1] = was.end; if (x0 !== x1 && y0 !== y1) liftArea([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]); }
+    render(); return;
+  }
+  if (was.mode === 'hole') {
+    if (was.moved && was.end) {
+      const [x0, y0] = was.start, [x1, y1] = was.end;
+      if (x0 !== x1 && y0 !== y1) cutHole([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+    } else if (!hole) hole = { pts: [was.start], cur: was.start };
+    else hole.pts.push(was.start);
+    render(); return;
+  }
+  if (was.mode === 'move' && was.moved) changed();
+  if ((was.mode === 'gmove' || was.mode === 'grot') && was.moved) saveGuides();
+  render(); renderInfo();
+}
+function pointerEnd(e) {
+  if (e.pointerType === 'touch') { touches.delete(e.pointerId); if (pinch) { if (!touches.size) pinch = null; return; } }
+  endDrag();
+}
+board.addEventListener('pointerup', pointerEnd); board.addEventListener('pointercancel', pointerEnd);
+// double-click on a line adds a node (detected here: the board redraws between clicks, so the browser's dblclick is unreliable)
+let lastDown = { t: 0, x: 0, y: 0 };
+function addNodeAt(sx, sy, tol = 6) {   // -> key of the new node, or false
+  if (nodeAt(sx, sy, 4)) return false;
+  const s = segmentAt(sx, sy, tol); if (!s) return false;
+  snapshot();
+  const c = C[s.ci], n = c.length / 2, j = (s.i + 1) % n;
+  const x = Math.round(c[2 * s.i] + s.t * (c[2 * j] - c[2 * s.i])), y = Math.round(c[2 * s.i + 1] + s.t * (c[2 * j + 1] - c[2 * s.i + 1]));
+  c.splice(2 * s.i + 2, 0, x, y);
+  const k = s.ci + ':' + (s.i + 1);
+  sel = new Set([k]); ghost = null; render(); changed(); return k;
+}
+// ---------- tools: Select (V) and Add node (+); Alt+click on a line also adds a node ----------
+let addMode = false, ghost = null, holeMode = false, hole = null, liftMode = false, scisMode = false;   // hole: the shape being drawn {pts, cur}
+function setMode(m) {   // 'select' | 'add' | 'hole' (true / false: add / select)
+  if (m === true) m = 'add'; if (m === false) m = 'select';
+  addMode = m === 'add'; holeMode = m === 'hole'; liftMode = m === 'lift'; scisMode = m === 'scis'; scisCuts = []; scisBase = null; ghost = null; hole = null; smartLines = [];
+  $('t-sel').setAttribute('aria-pressed', m === 'select'); $('t-add').setAttribute('aria-pressed', addMode); $('t-hole').setAttribute('aria-pressed', holeMode); $('t-lift').setAttribute('aria-pressed', liftMode); $('t-scis').setAttribute('aria-pressed', scisMode);
+  board.classList.toggle('adding', m !== 'select'); render();
+}
+$('t-sel').onclick = () => setMode('select'); $('t-add').onclick = () => setMode(addMode ? 'select' : 'add');
+$('t-hole').onclick = () => setMode(holeMode ? 'select' : 'hole');
+$('t-lift').onclick = () => setMode(liftMode ? 'select' : 'lift');
+$('t-scis').onclick = () => setMode(scisMode ? 'select' : 'scis');
+$('t-merge').onclick = () => mergeAll();
+// ---------- Scissors (K): the ink is cut along the drawn line; each side becomes a separate piece that can be moved.
+// Nothing is lost: the pieces meet exactly on the line (as after Lift part), and Merge (M) joins them again. ----------
+function scisPoint(sx, sy, e) {   // the end of the cut line: 0/45/90 degrees with Shift, otherwise snapped like a node
+  const [fx, fy] = toF(sx, sy); smartLines = [];
+  if (e && e.shiftKey && dragging && dragging.start) {
+    const [ax, ay] = dragging.start, dx = fx - ax, dy = fy - ay, ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4), len = Math.hypot(dx, dy);
+    return [Math.round(ax + len * Math.cos(ang)), Math.round(ay + len * Math.sin(ang))];
+  }
+  return snapPoint(fx, fy, null, dragging && dragging.start ? [dragging.start] : []);
+}
+let scisCuts = [], scisBase = null;   // cut lines drawn so far that have not yet separated a piece, and the outline before them
+function scissorCut(a, b) {
+  if (typeof polygonClipping === 'undefined') { setStatus('Scissors could not load', true); return; }
+  if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1) return;
+  if (!scisCuts.length) scisBase = C.map(c => c.slice());
+  scisCuts.push([a, b]);
+  // each line: a thin strip along it, 3 units wide, in two halves, run on 6 units past both ends, so that a line
+  // ending exactly on the outline (snapped to a node) still cuts through a slanted edge
+  const strips = scisCuts.map(([p, q]) => {
+    const L = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / L, (q[1] - p[1]) / L], o = [-u[1] * 1.5, u[0] * 1.5];
+    const a = [p[0] - 6 * u[0], p[1] - 6 * u[1]], b = [q[0] + 6 * u[0], q[1] + 6 * u[1]], P = (r, k) => [r[0] + k * o[0], r[1] + k * o[1]];
+    return [[[[a, b, P(b, 1), P(a, 1), a]]], [[[a, P(a, -1), P(b, -1), b, a]]]];
+  });
+  // every piece is cut on its own: pieces that only touch (after an earlier cut or Lift part) stay apart
+  const ink = contoursToGeom(scisBase), pieces = [];
+  let made = 0;
+  for (const poly of ink) {
+    let rest = [poly]; const halves = [];
+    for (const [left, right] of strips) {
+      rest = polygonClipping.difference(rest, left, right);
+      halves.push(...polygonClipping.intersection([poly], left), ...polygonClipping.intersection([poly], right));
+    }
+    // the halves of the strips go back to the piece on their side, so no ink is lost
+    const own = rest.map(pl => [pl]);
+    let todo = halves.map(h => [h]);
+    while (todo.length) {
+      const left = [];
+      for (const q of todo) {
+        const i = own.findIndex(pc => polygonClipping.union(pc, q).length <= pc.length);   // the piece it touches
+        if (i >= 0) own[i] = polygonClipping.union(own[i], q); else left.push(q);
+      }
+      if (left.length === todo.length) { left.forEach(q => own.push(q)); break; }
+      todo = left;
+    }
+    if (own.length > 1) { made += own.length - 1; pieces.push(...own); } else pieces.push([poly]);   // not cut through: as it was
+  }
+  if (!made) {   // nothing came apart yet (a closed frame needs a second cut): keep the line
+    render(); setStatus('Cut line marked: draw another line to cut the piece free (Esc: forget the lines)'); return;
+  }
+  const base = scisBase; scisCuts = []; scisBase = null;
+  H().undo.push(JSON.stringify(base)); H().redo.length = 0;
+  C = pieces.flatMap(pc => geomToContours(pc)); sel.clear(); smartLines = [];
+  render(); changed(); setStatus('Cut: ' + (made + 1) + ' pieces where there was one. Press inside a piece and drag it; Merge (M) joins them again');
+}
+// ---------- Merge (M): all pieces that touch or overlap become one outline (points on straight lines removed) ----------
+function mergeAll() {
+  if (typeof polygonClipping === 'undefined') { setStatus('Merge could not load', true); return; }
+  const g = contoursToGeom(C); if (!g.length) return;
+  const res = polygonClipping.union(...g.map(p => [p]));
+  const out = geomToContours(res).map(c => {
+    const r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]);
+    return r.filter((p, i) => { const q = r[(i - 1 + r.length) % r.length], n = r[(i + 1) % r.length]; return (p[0] - q[0]) * (n[1] - p[1]) - (p[1] - q[1]) * (n[0] - p[0]) !== 0; }).flat();
+  }).filter(c => c.length >= 6);
+  if (res.length === g.length && out.length === C.length) { setStatus('Nothing to merge: no pieces touch'); return; }
+  snapshot(); C = out; sel.clear(); render(); changed();
+  setStatus('Merged: ' + g.length + ' → ' + res.length + (res.length === 1 ? ' piece' : ' pieces'));
+}
+// ---------- Elements: a sign separated into Borger's elements (sep.json from sep_build.py, published next to the page:
+// every wedge and loose piece of squares drawn as the build draws it, White and Black, one group per element) ----------
+let SEP = null;
+async function sepOf(n) {
+  if (!SEP) { setStatus('Loading the elements…'); try { const r = await atelierData('sep.json'); SEP = r.ok ? await r.json() : {}; } catch (e) { SEP = {}; } }
+  return SEP[n];
+}
+async function toElements() {
+  const n = cur, e = await sepOf(n), els = e && e[fam === 'b' ? 'b' : 'w'];
+  if (n !== cur) return;
+  if (!els || !els.length) { setStatus('No elements for this sign', true); return; }
+  snapshot(); C = els.flat().map(c => c.slice()); sel.clear(); render(); changed();
+  setStatus('Borger’s elements: ' + els.length + ' pieces. Move them as you like, then Merge');
+}
+async function cutIntoElements() {
+  if (typeof polygonClipping === 'undefined') { setStatus('Cut into elements could not load', true); return; }
+  const n = cur, e = await sepOf(n), regions = e && e.b;     // the filled (Black) elements are the regions
+  if (n !== cur) return;
+  if (!regions || !regions.length) { setStatus('No elements for this sign', true); return; }
+  const before = contoursToGeom(C); if (!before.length) return;
+  const pieces = []; let all = [];
+  for (const el of regions) {
+    const R = contoursToGeom(el); if (!R.length) continue;
+    const part = polygonClipping.intersection(before, R);
+    if (part.length) pieces.push(...geomToContours(part));
+    all = all.length ? polygonClipping.union(all, R) : R;
+  }
+  const rest = all.length ? polygonClipping.difference(before, all) : [];
+  const extra = geomToContours(rest).filter(c => { let a = 0; for (let i = 0; i < c.length; i += 2) a += c[i] * c[(i + 3) % c.length] - c[(i + 2) % c.length] * c[i + 1]; return Math.abs(a) / 2 > 300; });
+  snapshot(); C = pieces.concat(extra); sel.clear(); render(); changed();
+  setStatus('Cut into ' + regions.length + ' elements' + (extra.length ? ' + ' + extra.length + ' piece(s) outside them' : '') + '. Merge joins them again');
+}
+$('t-els').onclick = toElements; $('t-cutels').onclick = cutIntoElements;
+// ---------- Lift part (L): the ink inside a box becomes a separate piece, selected, to be dragged into place ----------
+function liftArea(pts) {
+  if (typeof polygonClipping === 'undefined') { setStatus('Lift tool could not load', true); return; }
+  const before = contoursToGeom(C), R = [[pts]];
+  const part = polygonClipping.intersection(before, R), rest = polygonClipping.difference(before, R);
+  if (!part.length) { setStatus('No ink in that box', true); return; }
+  snapshot(); const a = geomToContours(rest), b = geomToContours(part); C = a.concat(b);
+  sel = new Set(); for (let ci = a.length; ci < C.length; ci++) contourKeys(ci).forEach(k => sel.add(k));
+  setMode('select'); render(); changed(); setStatus('Part lifted: press inside it and drag it into place');
+}
+// ---------- Cut hole (H): the drawn shape is subtracted from the sign's outline ----------
+function holePoint(sx, sy, e) {
+  const [fx, fy] = toF(sx, sy); smartLines = [];
+  if (e && e.shiftKey) return [snapV(fx), snapV(fy)];
+  return snapPoint(fx, fy, null, hole && hole.pts.length ? [hole.pts[hole.pts.length - 1]] : []);
+}
+const ringArea = r => r.reduce((s, p, i) => { const q = r[(i + 1) % r.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+function pointIn(pt, r) {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; }
+  return c;
+}
+let outerSign = 1;   // direction of outer contours in the data (the largest contour is always an outer one)
+// which outline a hollow belongs to: the nearest outline BEFORE it in the list that contains it. Outlines are stored
+// first and their hollows after them, and a pasted or inserted element comes after the sign, so a hollow of the sign
+// lying under a new element still belongs to the sign (it was stitched to the element: dragged along, filled by Merge).
+// Falls back to the smallest outline containing it. rings: [[x, y], ...]; sign: the outer direction -> index or -1
+function ownerOf(rings, j, sign) {
+  const h = rings[j], probe = [(h[0][0] + h[1][0] + h[2][0]) / 3, (h[0][1] + h[1][1] + h[2][1]) / 3];
+  const inside = o => pointIn(h[0], o) || pointIn(probe, o);
+  for (let i = j - 1; i >= 0; i--) if (ringArea(rings[i]) * sign > 0 && inside(rings[i])) return i;
+  let best = -1, ba = Infinity;
+  rings.forEach((o, i) => { const a = Math.abs(ringArea(o)); if (ringArea(o) * sign > 0 && a < ba && inside(o)) { ba = a; best = i; } });
+  return best;
+}
+function contoursToGeom(cs) {   // contours (outer one way, hollows the other) -> polygons with holes
+  const rings = cs.filter(c => c.length >= 6).map(c => { const r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]); return r; });
+  if (rings.length) outerSign = Math.sign(ringArea(rings.reduce((m, r) => Math.abs(ringArea(r)) > Math.abs(ringArea(m)) ? r : m))) || 1;
+  const polys = new Map();                      // outline index -> [outline, its hollows...]
+  rings.forEach((r, i) => { if (ringArea(r) * outerSign > 0) polys.set(i, [r]); });
+  rings.forEach((r, j) => { if (ringArea(r) * outerSign < 0) { const o = ownerOf(rings, j, outerSign); if (o >= 0) polys.get(o).push(r); } });
+  return [...polys.values()];
+}
+function geomToContours(mp) {
+  const out = [];
+  for (const poly of mp) poly.forEach((ring, i) => {
+    let r = ring.map(([x, y]) => [Math.round(x), Math.round(y)]);
+    if (r.length > 1 && r[0][0] === r[r.length - 1][0] && r[0][1] === r[r.length - 1][1]) r.pop();
+    r = r.filter((p, j) => j === 0 || p[0] !== r[j - 1][0] || p[1] !== r[j - 1][1]);
+    if (r.length < 3) return;
+    if ((i === 0) !== (ringArea(r) * outerSign > 0)) r.reverse();      // outer as the data has it, hollows the other way
+    out.push(r.flat());
+  });
+  return out;
+}
+function cutHole(pts) {
+  if (typeof polygonClipping === 'undefined') { setStatus('Hole tool could not load', true); return; }
+  const before = contoursToGeom(C), res = polygonClipping.difference(before, [[pts]]);
+  const area = g => g.reduce((s, p) => s + p.reduce((t, r, i) => t + (i ? -1 : 1) * Math.abs(ringArea(r)), 0), 0);
+  if (Math.abs(area(before) - area(res)) < 1) { setStatus('Nothing to cut there', true); hole = null; render(); return; }
+  snapshot(); C = geomToContours(res); sel.clear(); hole = null; smartLines = []; render(); changed(); setStatus('Hole cut');
+}
+function finishHole() { if (hole && hole.pts.length >= 3) cutHole(hole.pts.slice()); }
+$('t-del').onclick = () => deleteSel();
+// ---------- copy / paste of whole contours (a hollow, or a whole sign), also between signs and families ----------
+let clip = null;   // {contours, from, fam}
+const contourKeys = ci => Array.from({ length: C[ci].length / 2 }, (_, i) => ci + ':' + i);
+const selContours = () => [...new Set([...sel].map(k => +k.split(':')[0]))].sort((a, b) => a - b);
+function copySel(cut) {
+  const cis = selContours(); if (!cis.length) { setStatus('Select a node of each contour to copy (Ctrl+click: whole contour)', true); return; }
+  clip = { contours: cis.map(ci => C[ci].slice()), from: cur, fam, dir: dirOf(C) }; $('t-paste').disabled = false;
+  if (cut) { snapshot(); C = C.filter((_, ci) => !cis.includes(ci)); sel.clear(); render(); changed(); }
+  setStatus((cut ? 'Cut ' : 'Copied ') + cis.length + (cis.length === 1 ? ' contour' : ' contours'));
+}
+// the direction the sign's outer contours run in (its largest contour is an outer one): the signs differ, so pasted
+// contours are turned to the direction of the sign they go into, or an outline would act as a hollow there and cut
+const ringOf = c => { const r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]); return r; };
+function dirOf(cs) { const rs = cs.filter(c => c.length >= 6).map(ringOf); return rs.length ? Math.sign(ringArea(rs.reduce((m, r) => Math.abs(ringArea(r)) > Math.abs(ringArea(m)) ? r : m))) || 1 : 0; }
+const reversed = c => { const out = []; for (let i = c.length - 2; i >= 0; i -= 2) out.push(c[i], c[i + 1]); return out; };
+function pasteClip() {
+  if (!clip || !cur) return;
+  const off = clip.from === cur && clip.fam === fam ? DATA.unit : 0;     // in the same sign: one square right and down
+  const here = dirOf(C), flip = here && clip.dir && here !== clip.dir;
+  snapshot(); const first = C.length;
+  clip.contours.forEach(c => { const m = c.map((v, i) => i % 2 ? v - off : v + off); C.push(flip ? reversed(m) : m); });
+  sel = new Set(); for (let ci = first; ci < C.length; ci++) contourKeys(ci).forEach(k => sel.add(k));
+  render(); changed(); setStatus('Pasted ' + clip.contours.length + (clip.contours.length === 1 ? ' contour' : ' contours') + ': drag to place');
+}
+// ---------- elements: Borger's own wedges (elements_lib.py: as the font build makes them), inserted as new contours ----------
+const ELEMENTS = {"v":{"0":{"w":[[0,132,0,96,96,0,144,0,240,96,240,132],[72,84,168,84,168,72,132,36,108,36,72,72]],"b":[[0,132,0,96,96,0,96,0,144,0,144,0,240,96,240,132]]},"1":{"w":[[0,144,0,108,96,12,96,0,144,0,144,12,240,108,240,144],[72,96,168,96,168,84,132,48,108,48,72,84]],"b":[[0,144,0,108,96,12,96,0,144,0,144,12,240,108,240,144]]},"2":{"w":[[0,168,0,132,96,36,96,0,144,0,144,36,240,132,240,168],[72,120,168,120,168,108,132,72,108,72,72,108]],"b":[[0,168,0,132,96,36,96,0,144,0,144,36,240,132,240,168]]},"3":{"w":[[0,192,0,156,96,60,96,0,144,0,144,60,240,156,240,192],[72,144,168,144,168,132,132,96,108,96,72,132]],"b":[[0,192,0,156,96,60,96,0,144,0,144,60,240,156,240,192]]},"4":{"w":[[0,216,0,180,96,84,96,0,144,0,144,84,240,180,240,216],[72,168,168,168,168,156,132,120,108,120,72,156]],"b":[[0,216,0,180,96,84,96,0,144,0,144,84,240,180,240,216]]},"5":{"w":[[0,240,0,204,96,108,96,0,144,0,144,108,240,204,240,240],[72,192,168,192,168,180,132,144,108,144,72,180]],"b":[[0,240,0,204,96,108,96,0,144,0,144,108,240,204,240,240]]},"6":{"w":[[0,264,0,228,96,132,96,0,144,0,144,132,240,228,240,264],[72,216,168,216,168,204,132,168,108,168,72,204]],"b":[[0,264,0,228,96,132,96,0,144,0,144,132,240,228,240,264]]},"7":{"w":[[0,288,0,252,96,156,96,0,144,0,144,156,240,252,240,288],[72,240,168,240,168,228,132,192,108,192,72,228]],"b":[[0,288,0,252,96,156,96,0,144,0,144,156,240,252,240,288]]},"8":{"w":[[0,312,0,276,96,180,96,0,144,0,144,180,240,276,240,312],[72,264,168,264,168,252,132,216,108,216,72,252]],"b":[[0,312,0,276,96,180,96,0,144,0,144,180,240,276,240,312]]},"9":{"w":[[0,336,0,300,96,204,96,0,144,0,144,204,240,300,240,336],[72,288,168,288,168,276,132,240,108,240,72,276]],"b":[[0,336,0,300,96,204,96,0,144,0,144,204,240,300,240,336]]},"10":{"w":[[0,360,0,324,96,228,96,0,144,0,144,228,240,324,240,360],[72,312,168,312,168,300,132,264,108,264,72,300]],"b":[[0,360,0,324,96,228,96,0,144,0,144,228,240,324,240,360]]},"11":{"w":[[0,384,0,348,96,252,96,0,144,0,144,252,240,348,240,384],[72,336,168,336,168,324,132,288,108,288,72,324]],"b":[[0,384,0,348,96,252,96,0,144,0,144,252,240,348,240,384]]},"12":{"w":[[0,408,0,372,96,276,96,0,144,0,144,276,240,372,240,408],[72,360,168,360,168,348,132,312,108,312,72,348]],"b":[[0,408,0,372,96,276,96,0,144,0,144,276,240,372,240,408]]},"13":{"w":[[0,432,0,396,96,300,96,0,144,0,144,300,240,396,240,432],[72,384,168,384,168,372,132,336,108,336,72,372]],"b":[[0,432,0,396,96,300,96,0,144,0,144,300,240,396,240,432]]},"14":{"w":[[0,456,0,420,96,324,96,0,144,0,144,324,240,420,240,456],[72,408,168,408,168,396,132,360,108,360,72,396]],"b":[[0,456,0,420,96,324,96,0,144,0,144,324,240,420,240,456]]},"15":{"w":[[0,480,0,444,96,348,96,0,144,0,144,348,240,444,240,480],[72,432,168,432,168,420,132,384,108,384,72,420]],"b":[[0,480,0,444,96,348,96,0,144,0,144,348,240,444,240,480]]},"16":{"w":[[0,504,0,468,96,372,96,0,144,0,144,372,240,468,240,504],[72,456,168,456,168,444,132,408,108,408,72,444]],"b":[[0,504,0,468,96,372,96,0,144,0,144,372,240,468,240,504]]},"17":{"w":[[0,528,0,492,96,396,96,0,144,0,144,396,240,492,240,528],[72,480,168,480,168,468,132,432,108,432,72,468]],"b":[[0,528,0,492,96,396,96,0,144,0,144,396,240,492,240,528]]},"18":{"w":[[0,552,0,516,96,420,96,0,144,0,144,420,240,516,240,552],[72,504,168,504,168,492,132,456,108,456,72,492]],"b":[[0,552,0,516,96,420,96,0,144,0,144,420,240,516,240,552]]},"19":{"w":[[0,576,0,540,96,444,96,0,144,0,144,444,240,540,240,576],[72,528,168,528,168,516,132,480,108,480,72,516]],"b":[[0,576,0,540,96,444,96,0,144,0,144,444,240,540,240,576]]},"20":{"w":[[0,600,0,564,96,468,96,0,144,0,144,468,240,564,240,600],[72,552,168,552,168,540,132,504,108,504,72,540]],"b":[[0,600,0,564,96,468,96,0,144,0,144,468,240,564,240,600]]},"21":{"w":[[0,624,0,588,96,492,96,0,144,0,144,492,240,588,240,624],[72,576,168,576,168,564,132,528,108,528,72,564]],"b":[[0,624,0,588,96,492,96,0,144,0,144,492,240,588,240,624]]},"22":{"w":[[0,648,0,612,96,516,96,0,144,0,144,516,240,612,240,648],[72,600,168,600,168,588,132,552,108,552,72,588]],"b":[[0,648,0,612,96,516,96,0,144,0,144,516,240,612,240,648]]},"23":{"w":[[0,672,0,636,96,540,96,0,144,0,144,540,240,636,240,672],[72,624,168,624,168,612,132,576,108,576,72,612]],"b":[[0,672,0,636,96,540,96,0,144,0,144,540,240,636,240,672]]},"24":{"w":[[0,696,0,660,96,564,96,0,144,0,144,564,240,660,240,696],[72,648,168,648,168,636,132,600,108,600,72,636]],"b":[[0,696,0,660,96,564,96,0,144,0,144,564,240,660,240,696]]},"25":{"w":[[0,720,0,684,96,588,96,0,144,0,144,588,240,684,240,720],[72,672,168,672,168,660,132,624,108,624,72,660]],"b":[[0,720,0,684,96,588,96,0,144,0,144,588,240,684,240,720]]},"26":{"w":[[0,744,0,708,96,612,96,0,144,0,144,612,240,708,240,744],[72,696,168,696,168,684,132,648,108,648,72,684]],"b":[[0,744,0,708,96,612,96,0,144,0,144,612,240,708,240,744]]},"27":{"w":[[0,768,0,732,96,636,96,0,144,0,144,636,240,732,240,768],[72,720,168,720,168,708,132,672,108,672,72,708]],"b":[[0,768,0,732,96,636,96,0,144,0,144,636,240,732,240,768]]},"28":{"w":[[0,792,0,756,96,660,96,0,144,0,144,660,240,756,240,792],[72,744,168,744,168,732,132,696,108,696,72,732]],"b":[[0,792,0,756,96,660,96,0,144,0,144,660,240,756,240,792]]},"29":{"w":[[0,816,0,780,96,684,96,0,144,0,144,684,240,780,240,816],[72,768,168,768,168,756,132,720,108,720,72,756]],"b":[[0,816,0,780,96,684,96,0,144,0,144,684,240,780,240,816]]},"30":{"w":[[0,840,0,804,96,708,96,0,144,0,144,708,240,804,240,840],[72,792,168,792,168,780,132,744,108,744,72,780]],"b":[[0,840,0,804,96,708,96,0,144,0,144,708,240,804,240,840]]}},"h":{"0":{"w":[[0,0,36,0,120,84,120,156,36,240,0,240],[60,168,96,132,96,108,60,72,48,84,48,156]],"b":[[0,0,36,0,120,84,120,156,36,240,0,240]]},"1":{"w":[[0,240,0,0,36,0,132,96,144,96,144,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,144,96,144,144,132,144,36,240]]},"2":{"w":[[0,240,0,0,36,0,132,96,168,96,168,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,168,96,168,144,132,144,36,240]]},"3":{"w":[[0,240,0,0,36,0,132,96,192,96,192,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,192,96,192,144,132,144,36,240]]},"4":{"w":[[0,240,0,0,36,0,132,96,216,96,216,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,216,96,216,144,132,144,36,240]]},"5":{"w":[[0,240,0,0,36,0,132,96,240,96,240,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,240,96,240,144,132,144,36,240]]},"6":{"w":[[0,240,0,0,36,0,132,96,264,96,264,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,264,96,264,144,132,144,36,240]]},"7":{"w":[[0,240,0,0,36,0,132,96,288,96,288,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,288,96,288,144,132,144,36,240]]},"8":{"w":[[0,240,0,0,36,0,132,96,312,96,312,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,312,96,312,144,132,144,36,240]]},"9":{"w":[[0,240,0,0,36,0,132,96,336,96,336,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,336,96,336,144,132,144,36,240]]},"10":{"w":[[0,240,0,0,36,0,132,96,360,96,360,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,360,96,360,144,132,144,36,240]]},"11":{"w":[[0,240,0,0,36,0,132,96,384,96,384,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,384,96,384,144,132,144,36,240]]},"12":{"w":[[0,240,0,0,36,0,132,96,408,96,408,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,408,96,408,144,132,144,36,240]]},"13":{"w":[[0,240,0,0,36,0,132,96,432,96,432,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,432,96,432,144,132,144,36,240]]},"14":{"w":[[0,240,0,0,36,0,132,96,456,96,456,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,456,96,456,144,132,144,36,240]]},"15":{"w":[[0,240,0,0,36,0,132,96,480,96,480,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,480,96,480,144,132,144,36,240]]},"16":{"w":[[0,240,0,0,36,0,132,96,504,96,504,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,504,96,504,144,132,144,36,240]]},"17":{"w":[[0,240,0,0,36,0,132,96,528,96,528,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,528,96,528,144,132,144,36,240]]},"18":{"w":[[0,240,0,0,36,0,132,96,552,96,552,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,552,96,552,144,132,144,36,240]]},"19":{"w":[[0,240,0,0,36,0,132,96,576,96,576,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,576,96,576,144,132,144,36,240]]},"20":{"w":[[0,240,0,0,36,0,132,96,600,96,600,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,600,96,600,144,132,144,36,240]]},"21":{"w":[[0,240,0,0,36,0,132,96,624,96,624,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,624,96,624,144,132,144,36,240]]},"22":{"w":[[0,240,0,0,36,0,132,96,648,96,648,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,648,96,648,144,132,144,36,240]]},"23":{"w":[[0,240,0,0,36,0,132,96,672,96,672,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,672,96,672,144,132,144,36,240]]},"24":{"w":[[0,240,0,0,36,0,132,96,696,96,696,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,696,96,696,144,132,144,36,240]]},"25":{"w":[[0,240,0,0,36,0,132,96,720,96,720,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,720,96,720,144,132,144,36,240]]},"26":{"w":[[0,240,0,0,36,0,132,96,744,96,744,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,744,96,744,144,132,144,36,240]]},"27":{"w":[[0,240,0,0,36,0,132,96,768,96,768,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,768,96,768,144,132,144,36,240]]},"28":{"w":[[0,240,0,0,36,0,132,96,792,96,792,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,792,96,792,144,132,144,36,240]]},"29":{"w":[[0,240,0,0,36,0,132,96,816,96,816,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,816,96,816,144,132,144,36,240]]},"30":{"w":[[0,240,0,0,36,0,132,96,840,96,840,144,132,144,36,240],[60,168,96,132,96,108,60,72,48,72,48,168]],"b":[[0,240,0,0,36,0,132,96,840,96,840,144,132,144,36,240]]}},"dr":{"0":{"w":[[0,36,0,0,192,0,192,36,192,36,192,192,156,192],[132,120,144,108,144,48,84,48,72,60]],"b":[[0,36,0,0,192,0,192,36,192,36,192,192,156,192]]},"1":{"w":[[0,60,0,24,156,24,180,0,216,0,216,36,192,60,192,216,156,216],[132,144,144,132,144,72,84,72,72,84]],"b":[[0,60,0,24,156,24,180,0,216,0,216,36,192,60,192,216,156,216]]},"2":{"w":[[0,84,0,48,156,48,204,0,240,0,240,36,192,84,192,240,156,240],[132,168,144,156,144,96,84,96,72,108]],"b":[[0,84,0,48,156,48,204,0,240,0,240,36,192,84,192,240,156,240]]},"3":{"w":[[0,108,0,72,156,72,228,0,264,0,264,36,192,108,192,264,156,264],[132,192,144,180,144,120,84,120,72,132]],"b":[[0,108,0,72,156,72,228,0,264,0,264,36,192,108,192,264,156,264]]},"4":{"w":[[0,132,0,96,156,96,252,0,288,0,288,36,192,132,192,288,156,288],[132,216,144,204,144,144,84,144,72,156]],"b":[[0,132,0,96,156,96,252,0,288,0,288,36,192,132,192,288,156,288]]},"5":{"w":[[0,156,0,120,156,120,276,0,312,0,312,36,192,156,192,312,156,312],[132,240,144,228,144,168,84,168,72,180]],"b":[[0,156,0,120,156,120,276,0,312,0,312,36,192,156,192,312,156,312]]},"6":{"w":[[0,180,0,144,156,144,300,0,336,0,336,36,192,180,192,336,156,336],[132,264,144,252,144,192,84,192,72,204]],"b":[[0,180,0,144,156,144,300,0,336,0,336,36,192,180,192,336,156,336]]},"7":{"w":[[0,204,0,168,156,168,324,0,360,0,360,36,192,204,192,360,156,360],[132,288,144,276,144,216,84,216,72,228]],"b":[[0,204,0,168,156,168,324,0,360,0,360,36,192,204,192,360,156,360]]},"8":{"w":[[0,228,0,192,156,192,348,0,384,0,384,36,192,228,192,384,156,384],[132,312,144,300,144,240,84,240,72,252]],"b":[[0,228,0,192,156,192,348,0,384,0,384,36,192,228,192,384,156,384]]},"9":{"w":[[0,252,0,216,156,216,372,0,408,0,408,36,192,252,192,408,156,408],[132,336,144,324,144,264,84,264,72,276]],"b":[[0,252,0,216,156,216,372,0,408,0,408,36,192,252,192,408,156,408]]},"10":{"w":[[0,276,0,240,156,240,396,0,432,0,432,36,192,276,192,432,156,432],[132,360,144,348,144,288,84,288,72,300]],"b":[[0,276,0,240,156,240,396,0,432,0,432,36,192,276,192,432,156,432]]},"11":{"w":[[0,300,0,264,156,264,420,0,456,0,456,36,192,300,192,456,156,456],[132,384,144,372,144,312,84,312,72,324]],"b":[[0,300,0,264,156,264,420,0,456,0,456,36,192,300,192,456,156,456]]},"12":{"w":[[0,324,0,288,156,288,444,0,480,0,480,36,192,324,192,480,156,480],[132,408,144,396,144,336,84,336,72,348]],"b":[[0,324,0,288,156,288,444,0,480,0,480,36,192,324,192,480,156,480]]},"13":{"w":[[0,348,0,312,156,312,468,0,504,0,504,36,192,348,192,504,156,504],[132,432,144,420,144,360,84,360,72,372]],"b":[[0,348,0,312,156,312,468,0,504,0,504,36,192,348,192,504,156,504]]},"14":{"w":[[0,372,0,336,156,336,492,0,528,0,528,36,192,372,192,528,156,528],[132,456,144,444,144,384,84,384,72,396]],"b":[[0,372,0,336,156,336,492,0,528,0,528,36,192,372,192,528,156,528]]},"15":{"w":[[0,396,0,360,156,360,516,0,552,0,552,36,192,396,192,552,156,552],[132,480,144,468,144,408,84,408,72,420]],"b":[[0,396,0,360,156,360,516,0,552,0,552,36,192,396,192,552,156,552]]},"16":{"w":[[0,420,0,384,156,384,540,0,576,0,576,36,192,420,192,576,156,576],[132,504,144,492,144,432,84,432,72,444]],"b":[[0,420,0,384,156,384,540,0,576,0,576,36,192,420,192,576,156,576]]},"17":{"w":[[0,444,0,408,156,408,564,0,600,0,600,36,192,444,192,600,156,600],[132,528,144,516,144,456,84,456,72,468]],"b":[[0,444,0,408,156,408,564,0,600,0,600,36,192,444,192,600,156,600]]},"18":{"w":[[0,468,0,432,156,432,588,0,624,0,624,36,192,468,192,624,156,624],[132,552,144,540,144,480,84,480,72,492]],"b":[[0,468,0,432,156,432,588,0,624,0,624,36,192,468,192,624,156,624]]},"19":{"w":[[0,492,0,456,156,456,612,0,648,0,648,36,192,492,192,648,156,648],[132,576,144,564,144,504,84,504,72,516]],"b":[[0,492,0,456,156,456,612,0,648,0,648,36,192,492,192,648,156,648]]},"20":{"w":[[0,516,0,480,156,480,636,0,672,0,672,36,192,516,192,672,156,672],[132,600,144,588,144,528,84,528,72,540]],"b":[[0,516,0,480,156,480,636,0,672,0,672,36,192,516,192,672,156,672]]}},"ur":{"0":{"w":[[0,192,0,156,156,0,192,0,192,156,192,156,192,192],[84,144,144,144,144,84,132,72,72,132]],"b":[[0,192,0,156,156,0,192,0,192,156,192,156,192,192]]},"1":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,216,180,216,216,180,216],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,216,180,216,216,180,216]]},"2":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,240,204,240,240,204,240],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,240,204,240,240,204,240]]},"3":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,264,228,264,264,228,264],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,264,228,264,264,228,264]]},"4":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,288,252,288,288,252,288],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,288,252,288,288,252,288]]},"5":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,312,276,312,312,276,312],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,312,276,312,312,276,312]]},"6":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,336,300,336,336,300,336],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,336,300,336,336,300,336]]},"7":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,360,324,360,360,324,360],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,360,324,360,360,324,360]]},"8":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,384,348,384,384,348,384],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,384,348,384,384,348,384]]},"9":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,408,372,408,408,372,408],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,408,372,408,408,372,408]]},"10":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,432,396,432,432,396,432],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,432,396,432,432,396,432]]},"11":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,456,420,456,456,420,456],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,456,420,456,456,420,456]]},"12":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,480,444,480,480,444,480],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,480,444,480,480,444,480]]},"13":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,504,468,504,504,468,504],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,504,468,504,504,468,504]]},"14":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,528,492,528,528,492,528],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,528,492,528,528,492,528]]},"15":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,552,516,552,552,516,552],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,552,516,552,552,516,552]]},"16":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,576,540,576,576,540,576],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,576,540,576,576,540,576]]},"17":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,600,564,600,600,564,600],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,600,564,600,600,564,600]]},"18":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,624,588,624,624,588,624],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,624,588,624,624,588,624]]},"19":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,648,612,648,648,612,648],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,648,612,648,648,612,648]]},"20":{"w":[[156,192,0,192,0,156,156,0,192,0,192,156,672,636,672,672,636,672],[84,144,144,144,144,84,132,72,72,132]],"b":[[156,192,0,192,0,156,156,0,192,0,192,156,672,636,672,672,636,672]]}},"wk":{"0":{"w":[[84,0,144,0,144,192,84,192,0,108,0,84],[84,48,48,84,48,108,84,144,96,132,96,60]],"b":[[84,0,144,0,144,192,84,192,0,108,0,84]]},"1":{"w":[[0,132,0,108,108,0,144,0,144,240,108,240],[96,156,96,84,84,72,48,108,48,132,84,168]],"b":[[0,132,0,108,108,0,144,0,144,240,108,240]]},"2":{"w":[[0,156,0,132,132,0,156,0,168,12,144,36,144,252,168,276,156,288,132,288],[84,192,96,180,96,108,84,96,48,132,48,156]],"b":[[0,156,0,132,132,0,156,0,168,12,144,36,144,252,168,276,156,288,132,288]]},"3":{"w":[[0,180,0,156,156,0,180,0,192,12,144,60,144,276,192,324,180,336,156,336],[84,216,96,204,96,132,84,120,48,156,48,180]],"b":[[0,180,0,156,156,0,180,0,192,12,144,60,144,276,192,324,180,336,156,336]]},"4":{"w":[[0,204,0,180,180,0,204,0,216,12,144,84,144,300,216,372,204,384,180,384],[84,240,96,228,96,156,84,144,48,180,48,204]],"b":[[0,204,0,180,180,0,204,0,216,12,144,84,144,300,216,372,204,384,180,384]]},"5":{"w":[[0,228,0,204,204,0,228,0,240,12,144,108,144,324,240,420,228,432,204,432],[84,264,96,252,96,180,84,168,48,204,48,228]],"b":[[0,228,0,204,204,0,228,0,240,12,144,108,144,324,240,420,228,432,204,432]]},"6":{"w":[[0,252,0,228,228,0,252,0,264,12,144,132,144,348,264,468,252,480,228,480],[84,288,96,276,96,204,84,192,48,228,48,252]],"b":[[0,252,0,228,228,0,252,0,264,12,144,132,144,348,264,468,252,480,228,480]]},"7":{"w":[[0,276,0,252,252,0,276,0,288,12,144,156,144,372,288,516,276,528,252,528],[84,312,96,300,96,228,84,216,48,252,48,276]],"b":[[0,276,0,252,252,0,276,0,288,12,144,156,144,372,288,516,276,528,252,528]]},"8":{"w":[[0,300,0,276,276,0,300,0,312,12,144,180,144,396,312,564,300,576,276,576],[84,336,96,324,96,252,84,240,48,276,48,300]],"b":[[0,300,0,276,276,0,300,0,312,12,144,180,144,396,312,564,300,576,276,576]]}}};
+const EL_DEF = { v: [21, 'Tail'], h: [13, 'Tail'], dr: [6, 'Tail'], ur: [6, 'Tail'], wk: [3, 'Arms'] };
+let elType = 'v';
+function insertElement() {
+  if (!cur) return;
+  const lib = ELEMENTS[elType], max = Object.keys(lib).length - 1;
+  const n = Math.max(0, Math.min(Math.round(+$('el-len').value || 0), max)); $('el-len').value = n;
+  const src = lib[n][fam === 'b' ? 'b' : 'w'];
+  const xs = src.flatMap(c => c.filter((_, i) => !(i % 2))), ys = src.flatMap(c => c.filter((_, i) => i % 2));
+  const [cx, cy] = toF(board.clientWidth / 2, board.clientHeight / 2), u = DATA.unit;
+  const dx = Math.round((cx - Math.max(...xs) / 2) / u) * u, dy = Math.round((cy - Math.max(...ys) / 2) / u) * u;   // on Borger's grid
+  const here = dirOf(C), there = dirOf(src), flip = here && there && here !== there;
+  snapshot(); const first = C.length;
+  src.forEach(c => { const m = c.map((v, i) => i % 2 ? v + dy : v + dx); C.push(flip ? reversed(m) : m); });
+  sel = new Set(); for (let ci = first; ci < C.length; ci++) contourKeys(ci).forEach(k => sel.add(k));
+  render(); changed(); setStatus('Inserted ' + $('el-types').querySelector('[aria-pressed="true"]').textContent + ' (' + EL_DEF[elType][1].toLowerCase() + ' ' + n + '): drag it into place');
+}
+$('el-types').querySelectorAll('button').forEach(b => b.onclick = () => {
+  elType = b.dataset.el; $('el-types').querySelectorAll('button').forEach(o => o.setAttribute('aria-pressed', o === b));
+  const [d, lbl] = EL_DEF[elType]; $('el-len').value = d; $('el-len').max = Object.keys(ELEMENTS[elType]).length - 1; $('el-len-lbl').textContent = lbl;
+});
+$('el-go').onclick = insertElement;
+$('el-len').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); insertElement(); } });
+function scaleSel(pct) {
+  if (sel.size < 2 || !(pct > 0)) return;
+  const pts = [...sel].map(getP), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2, f = pct / 100;
+  snapshot(); for (const k of sel) { const [x, y] = getP(k); setP(k, Math.round(cx + (x - cx) * f), Math.round(cy + (y - cy) * f)); }
+  render(); changed(); setStatus('Scaled to ' + pct + ' %');
+}
+// compensated (stroke-preserving) scaling of the selected contours: scaled round the middle like scaleSel, then the
+// outline grown by 24·(1 − f) on every side (ClipperOffset, mitred corners), so every stroke is 48 units again while
+// the sign is smaller: heads and tails shorter, hollows smaller, as Borger draws a sign inside another
+function scaleComp(pct) {
+  if (typeof ClipperLib === 'undefined' || typeof polygonClipping === 'undefined') { setStatus('Compensated scaling could not load', true); return; }
+  const f = pct / 100; if (!(f > 0) || f >= 1) { setStatus('Compensated scaling makes smaller: give less than 100 %', true); return; }
+  const cis = selContours().filter(ci => contourKeys(ci).every(k => sel.has(k)));
+  if (!cis.length) { setStatus('Select whole contours (drag a box round the part) for compensated scaling', true); return; }
+  const pts = cis.flatMap(ci => { const c = C[ci], r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]); return r; });
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const scaled = cis.map(ci => C[ci].map((v, i) => i % 2 ? cy + (v - cy) * f : cx + (v - cx) * f));
+  const geom = contoursToGeom(scaled), S = 8;   // Clipper works on integers: 1/8 unit
+  const co = new ClipperLib.ClipperOffset(20, 0.25), paths = [];
+  for (const poly of geom) poly.forEach((ring, ri) => {
+    let p = ring.map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round(y * S) }));
+    if (ClipperLib.Clipper.Orientation(p) !== (ri === 0)) p = p.reverse();   // outer rings one way, hollows the other
+    paths.push(p);
+  });
+  co.AddPaths(paths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+  const sol = new ClipperLib.Paths(); co.Execute(sol, 24 * (1 - f) * S);
+  const rings = sol.map(p => p.map(q => [Math.round(q.X / S), Math.round(q.Y / S)]));
+  const outs = rings.filter(r => ClipperLib.Clipper.Orientation(r.map(([x, y]) => ({ X: x, Y: y })))), holes = rings.filter(r => !outs.includes(r));
+  let res = polygonClipping.union(...outs.map(r => [[...r, r[0]]]));
+  if (holes.length) res = polygonClipping.difference(res, ...holes.map(r => [[...r, r[0]]]));
+  const out = geomToContours(res);
+  snapshot();
+  C = C.filter((c, i) => !cis.includes(i)).concat(out); sel.clear();
+  const base = C.length - out.length; for (let ci = base; ci < C.length; ci++) contourKeys(ci).forEach(k => sel.add(k));
+  render(); changed(); setStatus('Compensated scaling to ' + pct + ' %: strokes stay 48 units');
+}
+// rotate / mirror the selected nodes round the middle of the selection (on a whole unit, so 90° and 180° stay exact);
+// a mirrored contour is run backwards, so that its outline stays an outline and its hollows stay hollows
+function turnSel(deg, mx = 1, my = 1) {
+  if (sel.size < 2) return;
+  const pts = [...sel].map(getP), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const cx = Math.round((Math.min(...xs) + Math.max(...xs)) / 2), cy = Math.round((Math.min(...ys) + Math.max(...ys)) / 2);
+  const a = deg * RAD, co = Math.round(Math.cos(a) * 1e9) / 1e9, si = Math.round(Math.sin(a) * 1e9) / 1e9;
+  snapshot();
+  for (const k of sel) {
+    const [x, y] = getP(k), u = (x - cx) * mx, v = (y - cy) * my;
+    setP(k, Math.round(cx + u * co - v * si), Math.round(cy + u * si + v * co));
+  }
+  if (mx * my < 0) for (const ci of selContours()) if (contourKeys(ci).every(q => sel.has(q))) C[ci] = reversed(C[ci]);
+  render(); changed(); setStatus(mx * my < 0 ? 'Mirrored' : 'Rotated ' + deg + '°');
+}
+$('rot-go').onclick = () => { const d = parseFloat($('rot-deg').value); if (d) turnSel(d); };
+$('rot-l').onclick = () => turnSel(90); $('rot-r').onclick = () => turnSel(-90); $('rot-180').onclick = () => turnSel(180);
+$('flip-h').onclick = () => turnSel(0, -1, 1); $('flip-v').onclick = () => turnSel(0, 1, -1);
+$('t-copy').onclick = () => copySel(false); $('t-paste').onclick = pasteClip;
+$('scale-go').onclick = () => scaleSel(parseFloat($('scale-pct').value));
+$('scale-comp').onclick = () => scaleComp(parseFloat($('scale-pct').value));
+document.querySelectorAll('.scale-pre').forEach(b => b.onclick = () => { $('scale-pct').value = b.dataset.p; scaleSel(+b.dataset.p); });
+$('move-go').onclick = () => {   // move the selection by exact font units (24 = one square; Y up)
+  const dx = Math.round(+$('move-x').value || 0), dy = Math.round(+$('move-y').value || 0); if (!sel.size || (!dx && !dy)) return;
+  snapshot(); for (const k of sel) { const [x, y] = getP(k); setP(k, x + dx, y + dy); }
+  render(); changed(); setStatus('Moved by ' + dx + ', ' + dy);
+};
+// the contour under the pointer: its line (within 5 px), else the smallest hollow around the point -> index or null
+function contourAt(sx, sy) {
+  const s = segmentAt(sx, sy, 5 * hitScale); if (s) return s.ci;
+  const [fx, fy] = toF(sx, sy), rings = C.map(c => { const r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]); return r; });
+  if (!rings.length) return null;
+  const sign = Math.sign(ringArea(rings.reduce((m, r) => Math.abs(ringArea(r)) > Math.abs(ringArea(m)) ? r : m))) || 1;
+  const main = rings.reduce((m, r, i) => Math.abs(ringArea(r)) > Math.abs(ringArea(rings[m])) ? i : m, 0);
+  let best = null, ba = Infinity;     // the smallest hollow, or separate piece of ink, around the point
+  // the main outline stays put, unless the sign is in several pieces (after Scissors / Lift part): then every piece moves
+  const several = rings.filter(r => ringArea(r) * sign > 0).length > 1;
+  rings.forEach((r, i) => { const a = Math.abs(ringArea(r)); if ((several || i !== main) && a < ba && pointIn([fx, fy], r)) { ba = a; best = i; } });
+  return best;
+}
+// a contour and, if it is a separate piece of ink, the hollows inside it: they move together
+function pieceKeys(ci) {
+  const ring = c => { const r = []; for (let i = 0; i < c.length; i += 2) r.push([c[i], c[i + 1]]); return r; };
+  const rings = C.map(ring), sign = Math.sign(ringArea(rings.reduce((m, r) => Math.abs(ringArea(r)) > Math.abs(ringArea(m)) ? r : m))) || 1;
+  const keys = contourKeys(ci), r0 = rings[ci], a0 = Math.abs(ringArea(r0));
+  if (ringArea(r0) * sign > 0) rings.forEach((r, j) => { if (j !== ci && ringArea(r) * sign < 0 && Math.abs(ringArea(r)) < a0 && ownerOf(rings, j, sign) === ci) keys.push(...contourKeys(j)); });
+  return keys;
+}
+function ghostAt(sx, sy) {   // where a click would add a node (screen coordinates)
+  if (nodeAt(sx, sy)) return null;
+  const s = segmentAt(sx, sy, 10); if (!s) return null;
+  const c = C[s.ci], n = c.length / 2, j = (s.i + 1) % n;
+  return toS(c[2 * s.i] + s.t * (c[2 * j] - c[2 * s.i]), c[2 * s.i + 1] + s.t * (c[2 * j + 1] - c[2 * s.i + 1]));
+}
+board.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [sx, sy] = local2(e);
+  if (e.ctrlKey || e.metaKey) { zoomAt(sx, sy, Math.exp(-e.deltaY * 0.0025)); }
+  else if (e.shiftKey) { view.ox -= e.deltaX || e.deltaY; render(); }
+  else { view.ox -= e.deltaX; view.oy -= e.deltaY; render(); }
+}, { passive: false });
+function zoomAt(sx, sy, f) {
+  const z = Math.max(0.05, Math.min(20, view.z * f)); f = z / view.z;
+  view.ox = sx - (sx - view.ox) * f; view.oy = sy - (sy - view.oy) * f; view.z = z; render();
+}
+$('z-in').onclick = () => { const { w, h } = size(); zoomAt(w / 2, h / 2, 1.25); };
+$('z-out').onclick = () => { const { w, h } = size(); zoomAt(w / 2, h / 2, 0.8); };
+$('z-fit').onclick = () => { fit(); render(); };
+
+// ---------- keys ----------
+function deleteSel() {
+  if (!sel.size) return; snapshot();
+  const by = new Map(); for (const k of sel) { const [ci, pi] = k.split(':').map(Number); if (!by.has(ci)) by.set(ci, new Set()); by.get(ci).add(pi); }
+  C = C.map((c, ci) => { if (!by.has(ci)) return c; const out = []; for (let i = 0; i < c.length; i += 2) if (!by.get(ci).has(i / 2)) out.push(c[i], c[i + 1]); return out; }).filter(c => c.length >= 6);
+  sel.clear(); render(); changed();
+}
+let nudgeTimer = null, nudging = false;
+document.addEventListener('keydown', e => {
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT')) return;
+  const mod = e.ctrlKey || e.metaKey;
+  if (e.key === ' ') { spaceDown = true; board.classList.add('pan'); e.preventDefault(); return; }
+  if (!cur) return;
+  if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+  if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySel(false); return; }
+  if (mod && e.key.toLowerCase() === 'x') { e.preventDefault(); copySel(true); return; }
+  if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteClip(); return; }
+  if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); copySel(false); pasteClip(); return; }
+  if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); sel = new Set(); C.forEach((c, ci) => { for (let i = 0; i < c.length / 2; i++) sel.add(ci + ':' + i); }); render(); renderInfo(); return; }
+  if (holeMode && hole) {   // drawing a hole: Enter closes it, Esc cancels, Backspace takes the last corner back
+    if (e.key === 'Enter') { e.preventDefault(); finishHole(); return; }
+    if (e.key === 'Escape') { hole = null; smartLines = []; render(); return; }
+    if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); hole.pts.pop(); if (!hole.pts.length) hole = null; render(); return; }
+  }
+  if (e.key === 'Escape') { sel.clear(); gsel = -1; if (addMode || holeMode || liftMode || scisMode) setMode('select'); render(); renderInfo(); return; }
+  if (!mod && e.key.toLowerCase() === 'l') { e.preventDefault(); setMode(liftMode ? 'select' : 'lift'); return; }
+  if (!mod && e.key.toLowerCase() === 'k') { e.preventDefault(); setMode(scisMode ? 'select' : 'scis'); return; }
+  if (!mod && e.key.toLowerCase() === 'm') { e.preventDefault(); mergeAll(); return; }
+  if (!mod && e.key.toLowerCase() === 'h') { e.preventDefault(); setMode(holeMode ? 'select' : 'hole'); return; }
+  if (!mod && (e.key === '+' || e.key === '=')) { e.preventDefault(); setMode(!addMode); return; }
+  if (!mod && e.key.toLowerCase() === 'v') { setMode(false); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); if (gsel >= 0 && !sel.size) deleteGuide(); else deleteSel(); return; }
+  if (!mod && e.key.toLowerCase() === 'g') { e.preventDefault(); addGuide(); return; }
+  if (!mod && e.key.toLowerCase() === 'r') { e.preventDefault(); turnGuide(e.shiftKey ? -45 : 45); return; }
+  const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+  if (dir && sel.size) {
+    e.preventDefault();
+    if (!nudging) { snapshot(); nudging = true; }
+    const st = e.shiftKey ? DATA.unit / 2 : 1;
+    for (const k of sel) { const [x, y] = getP(k); setP(k, x + dir[0] * st, y + dir[1] * st); }
+    render(); renderInfo(); clearTimeout(nudgeTimer); nudgeTimer = setTimeout(() => { nudging = false; changed(); }, 400);
+  }
+});
+document.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; board.classList.remove('pan'); } });
+
+// ---------- info ----------
+function renderInfo() {
+  if (!cur) return;
+  const g = byName.get(cur);
+  $('i-cp').textContent = cpLabel(cur);
+  $('i-name').textContent = nameOf(g) + (g.sn && g.sn !== g.l ? '  ·  ' + g.l : '');
+  $('i-mz').textContent = (g.mz && g.mz.length ? g.mz.join(', ') : '—') + (g.src ? ' (Borger’s drawing ' + g.src.join(', ') + ')' : '');
+  $('i-go').textContent = (g.go || '—') + (g.gl && g.gl.length ? ' · list: ' + g.gl.join(', ') : '');
+  $('i-go').title = 'Counted on the drawing' + (g.gl && g.gl.length ? '; list = Wikidata P11957 (Neo-Assyrian where given)' : '');
+  $('i-cont').textContent = C.length;
+  $('i-nodes').textContent = C.reduce((s, c) => s + c.length / 2, 0);
+  $('i-adv').textContent = g.a + ' (' + (g.a / DATA.unit) + ' sq)';
+  $('i-state').textContent = local[fam][cur] ? 'unsaved' : saved[fam][cur] ? 'edited ' + saved[fam][cur].updatedAt.slice(0, 10) : g.ref ? 'Borger’s drawing, no code point, not in the font' : g.gen || g.built ? 'built for the font (not drawn by Borger)' : 'as in v0.9.3';
+  const one = sel.size === 1 ? [...sel][0] : null;
+  $('sel-lbl').textContent = sel.size > 1 ? sel.size + ' nodes selected' : 'Selected node';
+  for (const id of ['nx', 'ny']) $(id).disabled = !one;
+  if (one) { const [x, y] = getP(one); if (document.activeElement !== $('nx')) $('nx').value = x; if (document.activeElement !== $('ny')) $('ny').value = y; }
+  else { $('nx').value = ''; $('ny').value = ''; }
+  $('multi-panel').hidden = sel.size < 2; $('rot-panel').hidden = sel.size < 2; $('move-panel').hidden = !sel.size;
+  $('seg-ang').textContent = one ? 'Lines from this node: ' + segAngles(one).map(fmtA).join(' and ') : '';
+  const gp = $('guide-panel'); gp.hidden = !(gsel >= 0 && GL()[gsel]);
+  if (!gp.hidden && document.activeElement !== $('ga')) $('ga').value = Math.round(normA(GL()[gsel].a) * 10) / 10;
+  $('undo').disabled = !H().undo.length; $('redo').disabled = !H().redo.length;
+}
+// Assurbanipal (the font, published next to the page) and Ellermeier's sign images by MesZL number (ell.json, loaded once)
+let ELL = null;
+atelierData('ell.json').then(r => r.ok ? r.json() : null).then(j => { ELL = j; if (cur) renderCorr(); }).catch(() => {});
+function renderCorr() {
+  const g = byName.get(cur); if (!g) return;
+  const empty = ELL ? new Set(ELL.asb_empty) : new Set();
+  const cps = g.ref ? [] : g.n.split('_').map(p => p.slice(1));
+  $('asb').innerHTML = g.ref ? '<span class="none">No code point</span>'
+    : cps.some(c => empty.has(c)) ? '<span class="none">Empty in Assurbanipal</span>' : `<span class="g">${chars(g.n)}</span>`;
+  if (!ELL) { $('ell').innerHTML = '<span class="none">Loading…</span>'; return; }
+  const seen = new Set(), items = [];
+  for (const z of g.mz || []) for (const k of [z, (/^\d+/.exec(z) || [])[0]]) if (k && ELL.ell[k] && !seen.has(k)) { seen.add(k); items.push(...ELL.ell[k].map(e => [k, ...e])); }
+  $('ell').innerHTML = items.length ? items.slice(0, 4).map(([k, src, page, t]) => `<div class="e" title="p. ${page}: ${t.replace(/"/g, '&quot;')}"><img src="${src}" alt="Ellermeier, B${k}"><span>B${k} · p. ${page}</span></div>`).join('')
+    : `<span class="none">${g.mz && g.mz.length ? 'No row with this number' : 'No MesZL number'}</span>`;
+}
+function renderOrig() {
+  if (!cur) return;
+  renderCorr();
+  const g = byName.get(cur), sq = fam === 'b' && g.q && g.q.length ? g.q : g.p, u = DATA.unit;
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const c of sq) for (let i = 0; i < c.length; i += 2) { x0 = Math.min(x0, c[i]); x1 = Math.max(x1, c[i]); y0 = Math.min(y0, c[i + 1]); y1 = Math.max(y1, c[i + 1]); }
+  if (x0 > x1) { $('orig-img').innerHTML = '<p class="note">No drawing.</p>'; return; }
+  const pad = u, W = x1 - x0 + 2 * pad, Hh = y1 - y0 + 2 * pad;
+  let grid = '';
+  for (let x = x0 - pad; x <= x1 + pad + 0.1; x += u) grid += `M${x} ${y0 - pad}V${y1 + pad}`;
+  for (let y = y0 - pad; y <= y1 + pad + 0.1; y += u) grid += `M${x0 - pad} ${y}H${x1 + pad}`;
+  $('orig-img').innerHTML = `<svg viewBox="${x0 - pad} ${-(y1 + pad)} ${W} ${Hh}" width="${W}" height="${Hh}" shape-rendering="crispEdges" role="img" aria-label="Borger's original drawing"><g transform="scale(1,-1)"><path class="gl" d="${grid}"/><path class="sq" fill-rule="nonzero" d="${pathD(sq, false)}"/></g></svg>`;
+  $('orig-cap').textContent = (g.gen || g.built ? 'Not drawn by Borger: generated from his ' + (g.l.startsWith('LU2') ? 'LÚ×BAD (LÚ 4 rows taller, inner sign at 62 %)' : g.l.startsWith('SAG') ? 'SAG×UM (the inner sign at 75 % under the head of the second vertical of SAG)' : g.l.startsWith('DAG KISIM5') ? 'DAG.KISIM₅×GA the way he drew his DAG.KISIM₅× (full stroke, his inner forms from this group)' : g.l.startsWith('NUNUZ AB2') ? 'NUNUZ.AB₂×BI the way he drew his NUNUZ.AB₂× (full stroke, inner forms from NINDA₂×)' : g.l.startsWith('NINDA2') ? 'NINDA₂×GUD the way he drew his NINDA₂× (full stroke, his inner forms)' : g.l.startsWith('EZEN') ? 'EZEN×A / ×LA the way he drew his EZEN× (full stroke, his inner forms from other × signs)' : g.l.startsWith('GA2') ? 'GA₂×PA / ×ŠE / ×IGI-gunû the way he drew his GA₂× (full stroke, his inner forms from other × signs)' : g.l.startsWith('LAGAB') ? 'LAGAB×A / ×GAR / ×IGI-gunû the way he drew his LAGAB× (full stroke, his inner forms from other × signs)' : g.l.startsWith('UR2') ? 'UR₂×U₂+AŠ the way he drew his UR₂× (frame at the height needed, full stroke, his inner forms)' : g.l.startsWith('AB2') ? 'AB₂×ŠA₃ the way he drew his AB₂× (open frame, full stroke, his inner forms)' : g.l.startsWith('AB ') ? 'AB×HA the way he drew his AB× (full stroke, his inner forms from other × signs)' : g.l.startsWith('NUN LAGAR') ? 'NUN.LAGAR×MAŠ the way he drew his NUN.LAGAR× (full stroke, his inner forms)' : g.l.startsWith('A TIMES') || g.l.startsWith('SHIM') || g.l.startsWith('UM TIMES') ? 'the SAG rule (the inner sign at 75 % under the head of the vertical before it)' : ['DUB TIMES', 'GESHTIN TIMES', 'TAG TIMES', 'IM TIMES'].some(s => g.l.startsWith(s)) ? 'a first draft from his base sign (its wedges drawn again with room for the inner sign)' : ['NAGA TIMES', 'UZ3 TIMES'].some(s => g.l.startsWith(s)) ? 'a first draft by the SAG rule (the inner sign at 75 % between the base sign’s parts)' : g.l.startsWith('EZEN TIMES KASKAL SQUARED') ? 'Ellermeier’s gúgu: four EZEN×KASKAL as a cross, the boxes touching (56 rows, taller than the line)' : g.l.startsWith('MUSH OVER MUSH TIMES') ? 'Ellermeier’s RI₈×A.NA: his MUŠ over MUŠ, the lines run on, his A and NA between them' : g.l.startsWith('ZA SQUARED') ? 'Ellermeier’s GIŠTA’E (4×ZA×KUR): four ZA round a 3×3 square, KUR in the middle, scaled to 50 %' : g.l.startsWith('UMUM TIMES') ? 'UMUM drawn again from its wedges, its box 6 rows taller, KASKAL at 75 %' : g.l.startsWith('BI TIMES') ? 'his BI (four wedges) spread apart as his AMAR×ŠE (full stroke, his inner forms)' : g.l.startsWith('NUNUZ KISIM5') ? 'his NUNUZ (NUNUZ.AB₂×BI) with KISIM₅ as in his DAG.KISIM₅× (full stroke)' : g.l.startsWith('AL TIMES') ? 'AL×GIŠ the way he drew his AL× (full stroke, his inner forms)' : g.l.startsWith('AMAR') ? 'AMAR×ŠE the way he drew it (his five-wedge frame at the height needed)' : g.l.startsWith('URU') ? 'URU× by the SAG rule (the inner sign at 75 % under the head of the first vertical of URU)' : g.l.startsWith('USH') ? 'UŠ×A the way he drew his UŠ× (full stroke, the inner sign after UŠ’s two verticals)' : g.l.startsWith('SHA3') ? 'ŠA₃× by the SAG rule (the inner sign at 75 % under the head of the second vertical of ŠA₃)' : 'KA×ME') : "Borger's original, " + (fam === 'b' && g.q && g.q.length ? 'BoldAkkadian' : 'OutAkkadian')) + ' · ' + Math.round(W / u - 2) + ' × ' + Math.round(Hh / u - 2) + ' squares';
+}
+function renderProof() {
+  if (!cur) return;
+  $('proof').innerHTML = miniSvg(cur, fam, 96, C) + miniSvg(cur, fam, 40, C) + miniSvg(cur, fam, 20, C);
+  renderProofLine();
+}
+// ---------- proof line: the sign being edited, highlighted, in the middle of a line of other signs ----------
+// one row of common signs (the edited sign goes in the middle)
+const PROOF_DEFAULT = '12079 12000 1202D 12038 1230B 12039 122D7 12157 12009 100079 120BC 122D9-1202D-12132 120FB 1212D 12217 12220 1223E 122BA 122AD 1235D 121B3 1222C 1224C 12292 122FE 12313 1208D 121FD 12337 121A0';
+const PROOF_OLD = ['12079 12000 1202D 12038 1230B 12039 122D7 12157 12009 100079 120BC 122D9-1202D-12132', '12079 12000 1202D 12038 1230B 12039 122D7 12157 12009 100079 120BC 122D9-1202D-12132 120FB 1212D 12217 12220 1223E 122BA 122AD 1235D 121B3 1222C 1224C 12292 122FE 12313 1208D 121FD 12337 121A0'];   // earlier defaults
+function proofTokens(text) {   // -> glyph names, null for a space, or {miss: token}
+  const out = [];
+  for (const tok of text.trim().split(/[\s,]+/).filter(Boolean)) {
+    if (/^(u\+?)?[0-9a-f]{4,6}(-[0-9a-f]{4,6})*$/i.test(tok)) { out.push('u' + tok.replace(/^u\+?/i, '').toUpperCase().split('-').join('_u')); continue; }
+    const cps = [...tok].map(ch => ch.codePointAt(0)).filter(c => c >= 0x12000);
+    if (cps.length) cps.forEach(c => out.push('u' + c.toString(16).toUpperCase())); else out.push({ miss: tok });
+    out.push(null);
+  }
+  return out;
+}
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+function renderProofLine() {
+  const h = +$('proof-size').value, toks = proofTokens($('proof-signs').value);
+  const mid = Math.ceil(toks.length / 2), line = [...toks.slice(0, mid), cur, ...toks.slice(mid)];
+  $('proof-line').innerHTML = line.map((t, i) => {
+    if (t === null) return '<span class="gap"></span>';
+    if (typeof t === 'object' || !byName.has(t)) return `<span class="miss" title="Not in the font">${typeof t === 'object' ? t.miss : t.replace(/u/g, ' ').trim()}</span>`;
+    const svg = miniSvg(t, fam, h, t === cur ? C : undefined).replace('<svg ', `<svg data-n="${t}" ${t === cur ? `class="cur${i === mid ? ' mid' : ''}" ` : ''}`);
+    return t === cur && i === mid ? `<span class="pl-cur">${svg}<span class="pl-cp" title="Click to copy the code point">${cpLabel(t)}</span></span>` : svg;   // the edited sign: its code point under it, in blue
+  }).join('');
+  const box = $('proof-line'), c = box.querySelector('svg.mid');   // keep the edited sign in view
+  if (c) { const r = c.getBoundingClientRect(), b = box.getBoundingClientRect(); box.scrollLeft += r.left - b.left - box.clientWidth / 2 + r.width / 2; }
+}
+$('proof-line').addEventListener('click', e => {
+  const cp = e.target.closest('.pl-cp');
+  if (cp) {   // copy the code point(s) without "U+", as the search and the proof line take them
+    const txt = cp.textContent.replace(/U\+/g, '').trim(), done = () => setStatus('Copied ' + txt);
+    try { navigator.clipboard.writeText(txt).then(done, () => { selectText(cp); setStatus('Press Ctrl+C to copy ' + txt); }); } catch (err) { selectText(cp); setStatus('Press Ctrl+C to copy ' + txt); }
+    return;
+  }
+  const s = e.target.closest('svg[data-n]'); if (s && s.dataset.n !== cur) { open(s.dataset.n); renderList(); } });
+try { const v = localStorage.getItem('atelier-proof-3'); $('proof-signs').value = v && !PROOF_OLD.includes(v) ? v : PROOF_DEFAULT; } catch (e) { $('proof-signs').value = PROOF_DEFAULT; }
+$('proof-signs').addEventListener('input', () => { try { localStorage.setItem('atelier-proof-3', $('proof-signs').value); } catch (e) {} renderProofLine(); });
+$('proof-size').addEventListener('change', renderProofLine);
+for (const [id, i] of [['nx', 0], ['ny', 1]]) $(id).addEventListener('change', () => {
+  const one = sel.size === 1 ? [...sel][0] : null; if (!one) return;
+  const v = Math.round(+$(id).value); if (!isFinite(v)) return;
+  snapshot(); const p = getP(one); p[i] = v; setP(one, p[0], p[1]); render(); changed();
+});
+
+// ---------- export (the same file the VectorCraft workflow uses) ----------
+function exportSvg() {
+  const g = byName.get(cur), asc = DATA.asc, Ht = DATA.asc + DATA.desc, a = g.a;
+  const d = pathD(C, true, asc), ref = pathD(g.p, true, asc);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<!-- Borger Akkadian ${cur} ${g.l}. Font units, 1 unit = 1 px. Edit the black shapes only.\n     Lines (stroke only) are guides: magenta = baseline, blue = cap line (624 above the baseline), green = advance width.\n     Keep them; the import uses them to find the frame. Pink outline = Borger's squares, for reference. -->\n` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${a}" height="${Ht}" viewBox="0 0 ${a} ${Ht}">\n<g id="guides" fill="none" stroke-width="2">` +
+    `<line id="baseline" x1="0" y1="${asc}" x2="${a}" y2="${asc}" stroke="#e0168c"/><line id="cap" x1="0" y1="${asc - DATA.cap}" x2="${a}" y2="${asc - DATA.cap}" stroke="#2b5b8c"/>` +
+    `<line id="advance-left" x1="0" y1="0" x2="0" y2="${Ht}" stroke="#2b8657"/><line id="advance-right" x1="${a}" y1="0" x2="${a}" y2="${Ht}" stroke="#2b8657"/></g>\n` +
+    `<g id="borger-squares"><path d="${ref}" fill="none" stroke="#f2a7cf" stroke-width="2"/></g>\n<g id="glyph"><path d="${d}" fill="#000000" fill-rule="nonzero"/></g>\n</svg>\n`;
+}
+$('export').onclick = async () => {
+  if (!downloads) return;
+  const g = byName.get(cur), fn = `${cur}--${g.l.replace(/[^A-Za-z0-9+]+/g, '-').slice(0, 70)}${fam === 'b' ? '--black' : fam === 'p' ? '--pixel' : ''}.svg`;
+  try { await downloads.save({ filename: fn, data: exportSvg() }); setStatus('Exported'); } catch (e) { setStatus('Export cancelled', true); }
+};
+let resetArmed = null;
+$('reset').onclick = () => {
+  if (!resetArmed) { $('reset').classList.add('confirm'); $('reset').textContent = 'Click again to reset'; resetArmed = setTimeout(() => { resetArmed = null; $('reset').classList.remove('confirm'); $('reset').textContent = 'Reset to the built sign'; }, 3000); return; }
+  clearTimeout(resetArmed); resetArmed = null; $('reset').classList.remove('confirm'); $('reset').textContent = 'Reset to the built sign'; resetSign();
+};
+
+// ---------- controls ----------
+function setFam(f) {
+  if (f === fam) return; fam = f;
+  for (const k of ['w', 'b']) $('fam-' + k).setAttribute('aria-pressed', f === k);
+  renderList(); open(cur, true); renderProof();
+}
+$('fam-w').onclick = () => setFam('w'); $('fam-b').onclick = () => setFam('b');
+function setView(solid) { $('v-out').setAttribute('aria-pressed', !solid); $('v-solid').setAttribute('aria-pressed', solid); board.classList.toggle('solid', solid); render(); }
+$('v-out').onclick = () => setView(false); $('v-solid').onclick = () => setView(true);
+$('show-ref').onchange = render;
+$('undo').onclick = undo; $('redo').onclick = redo;
+$('add-guide').onclick = () => { if (cur) addGuide(); };
+$('del-guide').onclick = deleteGuide;
+$('clear-guides').onclick = clearGuides;
+const toggle = (id, set) => { $(id).onclick = () => { const on = $(id).getAttribute('aria-pressed') !== 'true'; $(id).setAttribute('aria-pressed', on); set(on); }; };
+toggle('t-lock', v => { lockAng = v; }); toggle('t-addsel', v => { addSel = v; }); toggle('t-whole', v => { wholeSel = v; });
+$('t-desel').onclick = () => { sel.clear(); gsel = -1; if (addMode || holeMode || liftMode || scisMode) setMode('select'); render(); renderInfo(); };
+$('t-turn').onclick = () => turnGuide(45);
+$('ga').addEventListener('change', () => { const v = parseFloat($('ga').value); if (gsel < 0 || !isFinite(v)) return; GL()[gsel].a = v; render(); saveGuides(); });
+document.querySelectorAll('#guide-panel [data-a]').forEach(b => b.addEventListener('click', () => { if (gsel < 0) return; GL()[gsel].a = +b.dataset.a; render(); renderInfo(); saveGuides(); }));
+$('angstep').addEventListener('change', render);
+$('q').addEventListener('input', renderList); $('only-ed').addEventListener('change', renderList);
+$('ord-u').addEventListener('click', () => setOrder('u')); $('ord-m').addEventListener('click', () => setOrder('m'));
+if (order === 'm') { $('ord-u').setAttribute('aria-pressed', 'false'); $('ord-m').setAttribute('aria-pressed', 'true'); $('q').placeholder = 'Search: 662, 175v2, HI, KA TIMES, a2b5, U+12006…'; }
+new ResizeObserver(() => { if (cur) { fit(); render(); } }).observe(board);
+
+(async () => {
+  await load();
+  let first = '120FB'; try { first = (localStorage.getItem('atelier-cur') || 'u120FB').replace(/^u/, ''); } catch (e) {}
+  if (!byName.has('u' + first)) first = '120FB';
+  renderList(); open('u' + first); renderProof();
+  setStatus('Ready');
+  connect();
+})();
+</script>
+
+</body></html>
