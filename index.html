@@ -353,6 +353,14 @@ function contoursOf(n, f) {
   return base(byName.get(n), f);
 }
 const isEdited = (n, f) => !!(local[f][n] || saved[f][n]);
+// the advance of the outline in use: an unsaved edit gets its right edge + 2 squares (as save() stores it), a saved
+// edit its stored advance, else the built sign's
+function advOf(n, f) {
+  const L = local[f] || {}, S = saved[f] || {};
+  if (L[n]) { const xMax = Math.max(0, ...L[n].map(c => Math.max(...c.filter((_, i) => !(i % 2))))); return Math.ceil((xMax + 2 * DATA.unit) / DATA.unit) * DATA.unit; }
+  if (S[n] && S[n].a) return S[n].a;
+  return byName.get(n).a;
+}
 function pathD(cs, flip, H) {
   let d = '';
   for (const c of cs) {
@@ -364,9 +372,9 @@ function pathD(cs, flip, H) {
 }
 function miniSvg(n, f, h, cs) {
   const g = byName.get(n), H = DATA.asc;
-  const w = Math.max(g.a, 1), vbH = DATA.asc + DATA.desc;
+  const w = Math.max(advOf(n, f), 1), vbH = DATA.asc + DATA.desc;
   const st = h ? ` style="height:${h}px;width:${(w / vbH * h).toFixed(1)}px"` : '';
-  return `<svg viewBox="0 0 ${w} ${vbH}"${st} aria-hidden="true"><path fill-rule="nonzero" d="${pathD(cs || contoursOf(n, f), true, H)}"/></svg>`;
+  return `<svg viewBox="0 0 ${w} ${vbH}"${st} overflow="visible" aria-hidden="true"><path fill-rule="nonzero" d="${pathD(cs || contoursOf(n, f), true, H)}"/></svg>`;
 }
 
 // ---------- list ----------
@@ -503,7 +511,9 @@ const toS = (x, y) => [x * view.z + view.ox, -y * view.z + view.oy];
 const toF = (sx, sy) => [(sx - view.ox) / view.z, -(sy - view.oy) / view.z];
 function fit() {
   const g = byName.get(cur), { w, h } = size(); if (!w) return;
-  const W = g.a, top = DATA.asc, bot = -DATA.desc, Hh = top - bot;
+  let W = advOf(cur, fam), top = DATA.asc, bot = -DATA.desc;
+  for (const c of contoursOf(cur, fam)) for (let i = 0; i < c.length; i += 2) { W = Math.max(W, c[i]); top = Math.max(top, c[i + 1]); bot = Math.min(bot, c[i + 1]); }
+  const Hh = top - bot;
   view.z = Math.min((w - 60) / W, (h - 70) / Hh);
   view.ox = (w - W * view.z) / 2; view.oy = (h - Hh * view.z) / 2 + top * view.z;
 }
@@ -562,7 +572,7 @@ function render() {
   const big = 1e5;
   let s = `<g transform="${m}"><path class="grid" d="${grid}"/>${ref}<path class="ink" fill-rule="nonzero" d="${d}"/>` +
     `<path class="guide g-base" d="M${-big} 0H${big}"/><path class="guide g-cap" d="M${-big} ${DATA.cap}H${big}"/>` +
-    `<path class="guide g-adv" d="M0 ${-big}V${big}M${g.a} ${-big}V${big}"/>` +
+    `<path class="guide g-adv" d="M0 ${-big}V${big}M${advOf(cur, fam)} ${-big}V${big}"/>` +
     GL().map((gd, i) => { const c = Math.cos(gd.a * RAD), sn = Math.sin(gd.a * RAD); return `<path class="uguide${i === gsel ? ' sel' : ''}" d="M${gd.x - big * c} ${gd.y - big * sn}L${gd.x + big * c} ${gd.y + big * sn}"/>`; }).join('') +
     `<path class="outline" d="${d}"/></g>`;
   for (const l of smartLines) {
@@ -637,7 +647,7 @@ function snapPoint(tx, ty, key, from = []) {   // key: the dragged node (or null
   if (step) for (const [nx, ny] of [...(key ? neighbours(key) : []), ...from]) for (let a = 0; a < 180; a += step) L.push({ px: nx, py: ny, a, kind: 'ray', r: 0 });
   GL().forEach(gd => L.push({ px: gd.x, py: gd.y, a: gd.a, kind: 'guide', r: 0 }));
   if ($('smart').checked) {
-    const pts = [[0, 0], [g.a, DATA.cap]];
+    const pts = [[0, 0], [advOf(cur, fam), DATA.cap]];
     C.forEach((c, ci) => { for (let i = 0; i < c.length; i += 2) if (!sel.has(ci + ':' + i / 2)) pts.push([c[i], c[i + 1]]); });
     for (const [x, y] of pts) { L.push({ px: x, py: y, a: 90, kind: 'align', r: 1 }); L.push({ px: x, py: y, a: 0, kind: 'align', r: 1 }); }
   }
@@ -1230,7 +1240,7 @@ function renderInfo() {
   $('i-go').title = 'Counted on the drawing' + (g.gl && g.gl.length ? '; list = Wikidata P11957 (Neo-Assyrian where given)' : '');
   $('i-cont').textContent = C.length;
   $('i-nodes').textContent = C.reduce((s, c) => s + c.length / 2, 0);
-  $('i-adv').textContent = g.a + ' (' + (g.a / DATA.unit) + ' sq)';
+  $('i-adv').textContent = advOf(cur, fam) + ' (' + (advOf(cur, fam) / DATA.unit) + ' sq)';
   $('i-state').textContent = local[fam][cur] ? 'unsaved' : saved[fam][cur] ? 'edited ' + saved[fam][cur].updatedAt.slice(0, 10) : g.ref ? 'Borger’s drawing, no code point, not in the font' : g.gen || g.built ? 'built for the font (not drawn by Borger)' : 'as in v0.9.3';
   const one = sel.size === 1 ? [...sel][0] : null;
   $('sel-lbl').textContent = sel.size > 1 ? sel.size + ' nodes selected' : 'Selected node';
@@ -1323,7 +1333,7 @@ for (const [id, i] of [['nx', 0], ['ny', 1]]) $(id).addEventListener('change', (
 
 // ---------- export (the same file the VectorCraft workflow uses) ----------
 function exportSvg() {
-  const g = byName.get(cur), asc = DATA.asc, Ht = DATA.asc + DATA.desc, a = g.a;
+  const g = byName.get(cur), asc = DATA.asc, Ht = DATA.asc + DATA.desc, a = advOf(cur, fam);
   const d = pathD(C, true, asc), ref = pathD(g.p, true, asc);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<!-- Borger Akkadian ${cur} ${g.l}. Font units, 1 unit = 1 px. Edit the black shapes only.\n     Lines (stroke only) are guides: magenta = baseline, blue = cap line (624 above the baseline), green = advance width.\n     Keep them; the import uses them to find the frame. Pink outline = Borger's squares, for reference. -->\n` +
     `<svg xmlns="http://www.w3.org/2000/svg" width="${a}" height="${Ht}" viewBox="0 0 ${a} ${Ht}">\n<g id="guides" fill="none" stroke-width="2">` +
