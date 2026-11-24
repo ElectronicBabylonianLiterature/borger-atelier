@@ -2,14 +2,14 @@
 // ElectronicBabylonianLiterature/ebl-api-data-preparation, branch 'atelier', and are read and written with the
 // visitor's own GitHub token (kept only in this browser). This public site holds no data.
 //   signs.b64, sep.json, ell.json, fonts/assurbanipal.ttf <- borger-fonts/pipeline/atelier/web/
-//   collections white, black, guides, squares            <- borger-fonts/pipeline/atelier-db/<collection>/<id>.json
+//   collections white, black, guides, squares, signs     <- borger-fonts/pipeline/atelier-db/<collection>/<id>.json
 // Every save is a commit on the branch (saves within 2 s go together); edits from elsewhere are fetched every minute.
 (function () {
   const OWNER = 'ElectronicBabylonianLiterature', REPO = 'ebl-api-data-preparation';
   const qs = new URLSearchParams(location.search);
   const BRANCH = qs.get('branch') || 'atelier';
   const WEB = 'borger-fonts/pipeline/atelier/web/', DB = 'borger-fonts/pipeline/atelier-db/';
-  const COLS = ['white', 'black', 'guides', 'squares'];
+  const COLS = ['white', 'black', 'guides', 'squares', 'signs'];
   const TK = 'atelier-gh-token';
   let token = null; try { token = localStorage.getItem(TK); } catch (e) {}
   let ready, setReady; ready = new Promise(r => { setReady = r; });
@@ -98,6 +98,7 @@
   function applySquares() {
     const go = () => {
       if (typeof byName === 'undefined' || !byName.size) return setTimeout(go, 100);
+      addSigns();                              // the added signs first: their squares need them in the list
       for (const g of byName.values()) delete g.r;
       for (const [id, d] of Object.entries(cache.squares || {})) setSquares(id, d.r);
       if (typeof cur !== 'undefined' && cur && typeof render === 'function') render();
@@ -106,8 +107,16 @@
   }
   const loaded = ready.then(async () => {
     head = (await gh('GET', '/repos/' + OWNER + '/' + REPO + '/git/ref/heads/' + BRANCH)).object.sha;
-    await Promise.all(COLS.map(loadCol)); applySquares();
+    await Promise.all(COLS.map(loadCol)); applySquares(); addSigns();
   });
+  function addSigns() { if (window.atelierAddSigns) atelierAddSigns(Object.values(cache.signs || {})); }
+  // the Black of a White document (black.js, the rule of the font build's w2b.py)
+  function blackFor(id, body) {
+    if (!window.AtelierBlack || typeof byName === 'undefined' || !byName.get(id)) return null;
+    const g = byName.get(id);
+    try { return { a: body.a, c: AtelierBlack.fromWhite((body.c || []).map(c => c.p), g.w, g.b).map(p => ({ p })), family: 'black', updatedAt: body.updatedAt, from: 'white' }; }
+    catch (e) { console.error('black', e); return null; }
+  }
 
   // pending writes: {repo path: text | null (delete)}, flushed as one commit
   let pending = {}, waiters = [], timer = null, busy = false;
@@ -169,12 +178,16 @@
             if (r) { (cache.squares = cache.squares || {})[id] = { r }; w.push(queue(DB + 'squares/' + id + '.json', text({ r }))); }
             else if (cache.squares && cache.squares[id]) { delete cache.squares[id]; w.push(queue(DB + 'squares/' + id + '.json', null)); }
           }
+          // every White edit gives the Black (user, 2026-10-24: "all changes I do in outline should go into the black")
+          const bk = col === 'white' ? blackFor(id, body) : null;
+          if (bk) { (cache.black = cache.black || {})[id] = bk; w.push(queue(DB + 'black/' + id + '.json', text(bk))); fire('black'); }
           fire(col); await Promise.all(w);
         },
         async delete() {
           await loaded; if (cache[col]) delete cache[col][id];
           const w = [queue(DB + col + '/' + id + '.json', null)];
           if (col === 'white' && cache.squares && cache.squares[id]) { delete cache.squares[id]; setSquares(id, null); w.push(queue(DB + 'squares/' + id + '.json', null)); }
+          if (col === 'white' && cache.black && cache.black[id]) { delete cache.black[id]; w.push(queue(DB + 'black/' + id + '.json', null)); fire('black'); }   // the Black too
           fire(col); await Promise.all(w);
         }
       };
@@ -185,7 +198,7 @@
     try {
       if (!busy && !Object.keys(pending).length) {
         const h = (await gh('GET', '/repos/' + OWNER + '/' + REPO + '/git/ref/heads/' + BRANCH)).object.sha;
-        if (h !== head && !ours.has(h)) { await Promise.all(COLS.map(loadCol)); COLS.forEach(fire); applySquares(); }
+        if (h !== head && !ours.has(h)) { await Promise.all(COLS.map(loadCol)); COLS.forEach(fire); applySquares(); addSigns(); }
         head = h; if (status.state === 'starting' || status.state === 'error') { status.state = 'synced'; status.error = null; }
       }
     } catch (e) { status.state = 'error'; status.error = String(e.message || e); }
